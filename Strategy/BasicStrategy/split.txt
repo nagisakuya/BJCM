@@ -1,0 +1,10 @@
+P	P	P	P	P	P	P	P	P	P
+N	Ph	Ph	P	P	P	P	N	N	N
+N	Ph	Ph	P	P	P	P	N	N	N
+N	N	N	N	Ph	Ph	N	N	N	N
+N	N	N	N	N	N	N	N	N	N
+N	N	P	P	P	P	N	N	N	N
+N	P	P	P	P	P	P	N	N	N
+P	P	P	P	P	P	P	P	P	P
+N	P	P	P	P	P	N	P	P	N
+N	N	N	N	N	N	N	N	N	N
