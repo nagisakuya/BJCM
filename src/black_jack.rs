@@ -20,10 +20,8 @@ pub enum BJResult{
 pub fn judge(player:&Player,dealer:&Dealer) -> BJResult{
     if player.surrender {return BJResult::Surrender;}
 
-    let (dealer_sum,_) = dealer.hand.status();
-    let (player_sum,_) = player.hand.status();
-    let is_dealer_bj = dealer_sum == 21 && dealer.hand.len() == 2;
-    let is_player_bj = player_sum == 21 && player.hand.len() == 2 && !player.splitted;
+    let (dealer_sum,is_dealer_bj) = dealer.status();
+    let (player_sum,is_player_bj) = player.status();
 
     if is_dealer_bj && is_player_bj {return BJResult::Push;}
     if is_dealer_bj {return BJResult::Lose;}
@@ -40,6 +38,7 @@ pub fn judge(player:&Player,dealer:&Dealer) -> BJResult{
     else {return BJResult::Push;}
 }
 
+
 #[derive(Clone)]
 pub struct Dealer {
     hand: Hand,
@@ -53,6 +52,7 @@ impl Dealer {
     pub fn create(deck:&mut Deck) -> Self{
         let mut temp = Self::new();
         temp.hand.add(deck.draw_random());
+        if rule::DEALER_HOLE_CARD {temp.hand.add(deck.draw_random());}
         temp
     }
     pub fn from_arr(arr:&[usize]) -> Self{
@@ -62,10 +62,15 @@ impl Dealer {
     }
     pub fn drow(&mut self, deck: &mut Deck) {
         loop {
-            self.hand.add(deck.draw_random());
             let (sum,_) = self.hand.status();
             if sum>= 17 {break;}
+            self.hand.add(deck.draw_random());
         }
+    }
+    pub fn status(&self) -> (u8,bool){
+        let (sum,_) = self.hand.status();
+        let is_bj = sum == 21 && self.hand.len() == 2;
+        (sum,is_bj)
     }
 }
 
@@ -122,6 +127,11 @@ impl Player{
     }
     pub fn splittable(& self) -> bool{
         self.hand.len()==2 && self.hand[0] == self.hand[1] && (rule::RE_SPLIT || !self.splitted)
+    }
+    pub fn status(&self) -> (u8,bool){
+        let (sum,_) = self.hand.status();
+        let is_bj = sum == 21 && self.hand.len() == 2 && !self.splitted;
+        (sum,is_bj)
     }
 }
 
