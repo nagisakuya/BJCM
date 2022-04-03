@@ -7,14 +7,17 @@ use rand::Rng;
 use super::card;
 
 
+#[derive(Clone)]
 pub struct Deck{
-    content: [u16;10]
+    content: [u16;10],
+    rng:rand::rngs::ThreadRng
 }
 
 impl Deck{
     pub fn new(deck_size:u16) -> Self{
         let mut temp = Deck{
             content: [deck_size*4;10],
+            rng: rand::thread_rng(),
         };
         temp.content[9] = deck_size * 16;
         temp
@@ -22,8 +25,8 @@ impl Deck{
     pub fn sum(&self) -> u16{
         self.content.iter().sum()
     }
-    pub fn draw_random(&mut self,rng:&mut rand::rngs::ThreadRng) -> card::Card{
-        let f:f32 = rng.gen();
+    pub fn draw_random(&mut self) -> card::Card{
+        let f:f32 = self.rng.gen();
         let temp:u16 = (f * (self.sum() as f32)) as u16;
         let mut  pos = 0;
         for i in (0..10).rev(){
@@ -65,12 +68,11 @@ mod decktest{
 
     #[test]
     fn deck_test1(){
-        let mut rng = rand::thread_rng();
         let mut result = [0;10];
         let times = 1000000;
         for _ in 0..times{
             let mut deck = deck::Deck::new(1);
-            let temp = deck.draw_random(&mut rng);
+            let temp = deck.draw_random();
             result[temp.suit as usize - 1] += 1;
         }
         for &item in result.iter(){
@@ -80,10 +82,9 @@ mod decktest{
     
     #[test]
     fn deck_test2(){
-        let mut rng = rand::thread_rng();
         let mut deck = deck::Deck::new(1);
         for _ in 0..52 {
-            deck.draw_random(&mut rng);
+            deck.draw_random();
         }
         println!("{}",deck);
     }

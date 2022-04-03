@@ -3,11 +3,11 @@ use std::str::FromStr;
 use super::*;
 use super::rule;
 
-const hard_path:&str = "./Strategy/BasicStrategy/hard.txt";
-const soft_path:&str = "./Strategy/BasicStrategy/soft.txt";
-const split_path:&str = "./Strategy/BasicStrategy/split.txt";
+const HARD_PATH:&str = "./Strategy/BasicStrategy/hard.txt";
+const SOFT_PATH:&str = "./Strategy/BasicStrategy/soft.txt";
+const SPLIT_PATH:&str = "./Strategy/BasicStrategy/split.txt";
 
-enum Action {
+pub enum Action {
     Hit,
     Stand,
     Split,
@@ -57,7 +57,7 @@ impl FromStr for Strategy {
     }
 }
 
-fn loadStrategyFile(path: &str, array: &mut [[Strategy;10]]) {
+fn load_strategy_file(path: &str, array: &mut [[Strategy;10]]) {
     let mut string = fs::read_to_string(path).expect("Wrong path");
     string.retain(|c| c != '\r');
     let lines = string.split("\n");
@@ -77,9 +77,9 @@ impl HardHandStrategy {
             content: [[Strategy::Hit; 10]; 10],
         }
     }
-    fn loadStrategy(path: &str) -> Self {
+    fn load_strategy(path: &str) -> Self {
         let mut temp = Self::new();
-        loadStrategyFile(path,&mut temp.content);
+        load_strategy_file(path,&mut temp.content);
         temp
     }
 }
@@ -93,9 +93,9 @@ impl SoftHandStrategy {
             content: [[Strategy::Hit; 10]; 10],
         }
     }
-    fn loadStrategy(path: &str) -> Self {
+    fn load_strategy(path: &str) -> Self {
         let mut temp = Self::new();
-        loadStrategyFile(path,&mut temp.content);
+        load_strategy_file(path,&mut temp.content);
         temp
     }
 }
@@ -109,27 +109,27 @@ impl SplittableHandStrategy {
             content: [[Strategy::Hit; 10]; 10],
         }
     }
-    fn loadStrategy(path: &str) -> Self {
+    fn load_strategy(path: &str) -> Self {
         let mut temp = Self::new();
-        loadStrategyFile(path,&mut temp.content);
+        load_strategy_file(path,&mut temp.content);
         temp
     }
 }
 
-pub struct Strategies{
+pub struct BasicStrategy{
     hard:HardHandStrategy,
     soft:SoftHandStrategy,
     split:SplittableHandStrategy,
 }
-impl Strategies{
-    fn new() -> Self{
-        Strategies{
-            hard:HardHandStrategy::loadStrategy(hard_path),
-            soft:SoftHandStrategy::loadStrategy(soft_path),
-            split:SplittableHandStrategy::loadStrategy(split_path),
+impl BasicStrategy{
+    pub fn new() -> Self{
+        BasicStrategy{
+            hard:HardHandStrategy::load_strategy(HARD_PATH),
+            soft:SoftHandStrategy::load_strategy(SOFT_PATH),
+            split:SplittableHandStrategy::load_strategy(SPLIT_PATH),
         }
     }
-    fn get(&self,player:&Player,dealer:&Dealer) -> Action{
+    pub fn get(&self,player:&Player,dealer:&Dealer) -> Action{
         let dealer_upcard:usize = dealer.hand[0].to_usize();
         if player.splittable(){
             match self.split.content[player.hand[0].to_usize()][dealer_upcard]{
@@ -186,11 +186,11 @@ pub mod tests {
     use super::*;
     #[test]
     fn strategy_test() {
-        let stra = Strategies::new();
+        let stra = BasicStrategy::new();
         for i in 1..=10{
-            let mut player = Player::new(&[7,9]);
+            let mut player = Player::from_arr(&[7,9]);
             //player.splitted = true;
-            let dealer = Dealer::new(&[i]);
+            let dealer = Dealer::from_arr(&[i]);
             let a = stra.get(&player,&dealer);
             println!("{}",a);
         }

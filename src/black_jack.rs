@@ -9,29 +9,32 @@ use std::fmt;
 use deck::*;
 use hand::*;
 
-enum BJResult{
+pub enum BJResult{
     BJ,
     Win,
     Push,
     Lose,
+    Surrender,
 }
 
-fn judge(player:&Player,dealer:&Dealer) -> BJResult{
+pub fn judge(player:&Player,dealer:&Dealer) -> BJResult{
+    if player.surrender {return BJResult::Surrender;}
+
     let (dealer_sum,_) = dealer.hand.status();
     let (player_sum,_) = player.hand.status();
     let is_dealer_bj = dealer_sum == 21 && dealer.hand.len() == 2;
-    let is_player_bj = player_sum == 21 && player.hand.len() == 2;
+    let is_player_bj = player_sum == 21 && player.hand.len() == 2 && !player.splitted;
 
     if is_dealer_bj && is_player_bj {return BJResult::Push;}
     if is_dealer_bj {return BJResult::Lose;}
     if is_player_bj {return BJResult::BJ;}
 
-    let is_dealer_bust = dealer_sum > 21;
-    if is_dealer_bust {return BJResult::Win;}
-    
     let is_player_bust = player_sum > 21;
     if is_player_bust {return BJResult::Lose;}
 
+    let is_dealer_bust = dealer_sum > 21;
+    if is_dealer_bust {return BJResult::Win;}
+    
     if player_sum > dealer_sum {return BJResult::Win;}
     else if player_sum < dealer_sum {return BJResult::Lose;}
     else {return BJResult::Push;}
@@ -41,16 +44,25 @@ fn judge(player:&Player,dealer:&Dealer) -> BJResult{
 pub struct Dealer {
     hand: Hand,
 }
-
 impl Dealer {
-    pub fn new(arr:&[usize]) -> Self{
+    fn new() -> Self{
+        Dealer {
+            hand: Hand::new()
+        }
+    }
+    pub fn create(deck:&mut Deck) -> Self{
+        let mut temp = Self::new();
+        temp.hand.add(deck.draw_random());
+        temp
+    }
+    pub fn from_arr(arr:&[usize]) -> Self{
         Dealer {
             hand: Hand::from_arr(arr).unwrap(),
         }
     }
-    fn drow(&mut self, deck: &mut Deck,rng:&mut rand::rngs::ThreadRng) {
+    pub fn drow(&mut self, deck: &mut Deck) {
         loop {
-            self.hand.add(deck.draw_random(rng));
+            self.hand.add(deck.draw_random());
             let (sum,_) = self.hand.status();
             if sum>= 17 {break;}
         }
@@ -61,33 +73,52 @@ impl Dealer {
 pub struct Player {
     hand: Hand,
     splitted: bool,
-    doubled: bool,
+    pub doubled: bool,
+    surrender: bool,
 }
 impl Player{
-    pub fn new(arr:&[usize]) -> Self{
+    fn new() -> Self{
+        Player {
+            hand: Hand::new(),
+            splitted: false,
+            doubled: false,
+            surrender: false,
+        }
+    }
+    pub fn create(deck:&mut Deck) -> Self{
+        let mut temp = Self::new();
+        temp.hand.add(deck.draw_random());
+        temp.hand.add(deck.draw_random());
+        temp
+    }
+    pub fn from_arr(arr:&[usize]) -> Self{
         Player {
             hand: Hand::from_arr(arr).unwrap(),
             splitted: false,
             doubled: false,
+            surrender: false,
         }
     }
-    pub fn hit(&mut self, deck: &mut Deck,rng:&mut rand::rngs::ThreadRng) {
-        self.hand.add(deck.draw_random(rng));
+    pub fn hit(&mut self, deck: &mut Deck) {
+        self.hand.add(deck.draw_random());
     }
-    pub fn double(&mut self, deck: &mut Deck,rng:&mut rand::rngs::ThreadRng) {
-        self.hand.add(deck.draw_random(rng));
+    pub fn double(&mut self, deck: &mut Deck) {
+        self.hand.add(deck.draw_random());
         self.doubled = true;
     }
-    pub fn split(&mut self, deck: &mut Deck,rng:&mut rand::rngs::ThreadRng) -> Player {
+    pub fn split(&mut self, deck: &mut Deck) -> (Player,bool) {
         self.hand.pop();
         self.splitted = true;
         let mut clone = self.clone();
-        self.hit(deck,rng);
-        clone.hit(deck,rng);
-        clone
+        self.hit(deck);
+        clone.hit(deck);
+        (clone,if self.hand[0].suit == 1 {true} else {false})
+    }
+    pub fn surrender(&mut self) {
+        self.surrender = true
     }
     pub fn doubleable(&self) ->bool{
-        !self.splitted || rule::DOUBLE_AFTER_SPLIT
+        self.hand.len()==2 && (!self.splitted || rule::DOUBLE_AFTER_SPLIT)
     }
     pub fn splittable(& self) -> bool{
         self.hand.len()==2 && self.hand[0] == self.hand[1] && (rule::RE_SPLIT || !self.splitted)
@@ -111,17 +142,17 @@ pub mod tests{
     fn dealer_test(){
         let mut rng = rand::thread_rng();
         let mut deck = Deck::new(4);
-        let mut d = Dealer::new(&[rng.gen_range(1..=10)]);
-        d.drow(&mut deck, &mut rng);
+        let mut d = Dealer::from_arr(&[rng.gen_range(1..=10)]);
+        d.drow(&mut deck);
         println!("{}\n{:?}",d.hand,d.hand.status());
     }
     #[test]
     fn split_test(){
-        let mut rng = rand::thread_rng();
         let mut deck = Deck::new(4);
-        let mut p = Player::new(&[10,10]);
-        let m = p.split(&mut deck,&mut rng);
+        let mut p = Player::from_arr(&[3,3]);
+        let (m,flag) = p.split(&mut deck);
         println!("{}",p);
         println!("{}",m);
+        println!("{}",flag);
     }
 }
