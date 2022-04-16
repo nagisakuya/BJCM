@@ -2,5 +2,5 @@
 members = [
     "blackjack_lib",
     "montecalro",
-    "calculate_ev"
+    "calculate_ev",
 ]
