@@ -74,6 +74,7 @@ name = "montecalro"
 version = "0.1.0"
 dependencies = [
  "blackjack_lib",
+ "chrono",
 ]
 
 [[package]]
