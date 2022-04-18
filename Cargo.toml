@@ -4,5 +4,5 @@ members = [
     "montecalro",
     "calculate_ev",
     "efficiency_calc",
-    "utility",
+    "io_util",
 ]
