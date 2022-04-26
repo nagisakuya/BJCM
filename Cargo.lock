@@ -53,6 +53,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "defined_strategy_builder"
+version = "0.1.0"
+dependencies = [
+ "blackjack_lib",
+]
+
+[[package]]
 name = "efficiency_calc"
 version = "0.1.0"
 dependencies = [

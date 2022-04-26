@@ -5,4 +5,5 @@ members = [
     "calculate_ev",
     "efficiency_calc",
     "io_util",
+    "defined_strategy_builder",
 ]
