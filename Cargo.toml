@@ -6,4 +6,6 @@ members = [
     "efficiency_calc",
     "io_util",
     "defined_strategy_builder",
+    "egui_template",
+    "calc_ev_subprocess"
 ]
