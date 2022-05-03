@@ -3,9 +3,8 @@ members = [
     "blackjack_lib",
     "montecalro",
     "calculate_ev",
-    "efficiency_calc",
     "io_util",
     "defined_strategy_builder",
-    "egui_template",
-    "calc_ev_subprocess"
+    "blackjack_calculator",
+    "calc_ev_subprocess",
 ]
