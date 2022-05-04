@@ -131,6 +131,7 @@ dependencies = [
  "egui",
  "image",
  "io_util",
+ "once_cell",
  "serde",
  "tracing-subscriber",
  "tracing-wasm",
