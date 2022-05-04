@@ -1,5 +1,6 @@
 /target
 /outputs
-Cargo.lock
 /.vscode
-setting.BIN
+/setting.BIN
+Cargo.lock
+calc_ev_subprocess.exe
