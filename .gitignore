@@ -1,6 +1,5 @@
 /target
 /outputs
 /.vscode
-/setting.BIN
 Cargo.lock
-calc_ev_subprocess.exe
+/data/activation_code.txt
