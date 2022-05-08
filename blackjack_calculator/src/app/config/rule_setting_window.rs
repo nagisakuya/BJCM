@@ -28,9 +28,9 @@ impl RuleSettingWindow{
         rule.BJ_PAYBACK = self.bj_odd - 1.0;
         rule
     }
-    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Rule>){
+    pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Rule>){
         let mut result = (false,None);
-        Window::new("rule setting")
+        Window::new(config.get_text(TextKey::TrialVersionRuleSettingMessage))
         .auto_sized()
         .collapsible(false)
         .show(ctx, |ui|{
@@ -51,7 +51,7 @@ impl RuleSettingWindow{
             ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_ACE, "dealer peeks when Ace"));
             ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_TEN, "dealer peeks when Ten"));
             if !self.is_activated{
-                ui.label(RichText::new("試用版ではルール設定の\n変更ができません！").color(Color32::from_rgb(200, 0, 0)));
+                ui.label(RichText::new(config.get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
                 if ui.button("cancel").clicked(){

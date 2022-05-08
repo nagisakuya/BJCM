@@ -11,6 +11,6 @@ fn main() {
     eframe::run_native(
         "blackjack calculator",
         native_options,
-        Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc))),
+        Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc).unactivate())),
     );
 }

@@ -1,6 +1,47 @@
 use once_cell::sync::Lazy;
 use super::*;
 
+
+#[derive(Clone,serde::Serialize,serde::Deserialize)]
+pub struct Keys{
+    pub card: [Key; 10],
+    pub undo: Key,
+    pub next: Key,
+    pub reset: Key,
+    pub split: Key,
+    pub up:Key,
+    pub down:Key,
+    pub right:Key,
+    pub left:Key,
+}
+
+impl Default for Keys{
+    fn default() -> Self {
+        Keys {
+            card:[
+                Key::Num1,
+                Key::Num2,
+                Key::Num3,
+                Key::Num4,
+                Key::Num5,
+                Key::Num6,
+                Key::Num7,
+                Key::Num8,
+                Key::Num9,
+                Key::Num0,
+            ],
+            undo:Key::Z,
+            next:Key::Enter,
+            reset:Key::R,
+            split:Key::S,
+            up:Key::ArrowUp,
+            down:Key::ArrowDown,
+            right:Key::ArrowRight,
+            left:Key::ArrowLeft,
+        }
+    }
+}
+
 macro_rules! generate_combobox {
     ($label:expr,$ui:expr,$i:expr) => {{
         let text = format!("{:?}",$i);
@@ -25,9 +66,9 @@ impl KeySettingWindow{
             is_activated,
         }
     }
-    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Keys>){
+    pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Keys>){
         let mut result = (false,None);
-        Window::new("key setting")
+        Window::new(config.get_text(TextKey::KeySettingWindowName))
         .auto_sized()
         .collapsible(false)
         .show(ctx, |ui|{
@@ -53,7 +94,7 @@ impl KeySettingWindow{
                 generate_combobox!("Ten",ui,self.keys.card[9]);
             });
             if !self.is_activated{
-                ui.label(RichText::new("試用版ではキー設定を変更しても\n再起動時にリセットされます！").color(Color32::from_rgb(200, 0, 0)));
+                ui.label(RichText::new(config.get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
                 if ui.button("cancel").clicked(){

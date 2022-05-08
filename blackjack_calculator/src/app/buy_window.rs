@@ -11,15 +11,17 @@ impl BuyWindow {
             pcid: activator::Activator::get_pcid(),
         }
     }
-    pub fn show(&mut self, ctx: &Context) {
-        Window::new("製品版購入").open(&mut self.opened)
+    pub fn show(&mut self, ctx: &Context,config:&Config) {
+        Window::new(config.get_text(TextKey::BuyWindowName)).open(&mut self.opened)
         .show(ctx, |ui|{
-            ui.label(RichText::new("試用版と製品版の違い").heading());
-            ui.label(RichText::new("試用版では、テーブルルールの変更が出来ません。\n製品版では、テーブルルールを変更し、テーブルルールに対応した最適手と期待値を計算することができます。"));
-            ui.label(RichText::new("\nご購入方法").heading());
-            ui.label(RichText::new("こちらのwebサイトからご購入ください。"));
-            ui.add(Hyperlink::new("https://www.youtube.com/"));
-            ui.label("\nユーザーID:");
+            ui.label(RichText::new(config.get_text(TextKey::BuyWindowH1)).heading().color(Color32::from_gray(230)));
+            ui.label(RichText::new(config.get_text(TextKey::BuyWindowT1)));
+            ui.add_space(20.0);
+            ui.label(RichText::new(config.get_text(TextKey::BuyWindowH2)).heading().color(Color32::from_gray(230)));
+            ui.label(RichText::new(config.get_text(TextKey::BuyWindowT2)));
+            ui.add(Hyperlink::new(config.get_text(TextKey::PurchaseLink)));
+            ui.add_space(20.0);
+            ui.label(config.get_text(TextKey::BuyWindowUserID));
             let mut temp = self.pcid.clone();
             ui.add(TextEdit::singleline(&mut temp));
         });

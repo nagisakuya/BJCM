@@ -22,6 +22,10 @@ impl Activator {
     pub fn check_activated(&self) -> bool{
         self.code.is_some() && Self::get_hash() == self.code.unwrap()
     }
+    pub fn unactivate(&mut self){
+        self.code = None;
+        self.activated = false;
+    }
     fn load_code() -> Result<u64,()>{
         let mut file = match std::fs::File::open(ACTIVATION_CODE_PATH){
             Ok(x) => x,

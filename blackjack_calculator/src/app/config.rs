@@ -1,17 +1,24 @@
-use std::io::Write;
+use std::{io::Write, collections::HashMap};
+use once_cell::sync::Lazy;
 
 use super::*;
 
 pub mod rule_setting_window;
 pub use rule_setting_window::*;
 
-pub mod key_setting_window;
-pub use key_setting_window::*;
+pub mod key_setting;
+pub use key_setting::*;
+
+pub mod general_setting;
+pub use general_setting::*;
+
+
 
 #[derive(Default,serde::Serialize,serde::Deserialize)]
 pub struct Config {
     pub rule: Rule,
     pub kyes: Keys,
+    pub general: General,
 }
 impl Config{
     pub fn load() -> Self{
@@ -25,44 +32,28 @@ impl Config{
         let mut file = std::fs::File::create(SETTING_FILE_PATH).unwrap();
         file.write_all(&bincode::serialize(self).unwrap()).unwrap();
     }
-}
-
-#[derive(Clone,serde::Serialize,serde::Deserialize)]
-pub struct Keys{
-    pub card: [Key; 10],
-    pub undo: Key,
-    pub next: Key,
-    pub reset: Key,
-    pub split: Key,
-    pub up:Key,
-    pub down:Key,
-    pub right:Key,
-    pub left:Key,
-}
-
-impl Default for Keys{
-    fn default() -> Self {
-        Keys {
-            card:[
-                Key::Num1,
-                Key::Num2,
-                Key::Num3,
-                Key::Num4,
-                Key::Num5,
-                Key::Num6,
-                Key::Num7,
-                Key::Num8,
-                Key::Num9,
-                Key::Num0,
-            ],
-            undo:Key::Z,
-            next:Key::Enter,
-            reset:Key::R,
-            split:Key::S,
-            up:Key::ArrowUp,
-            down:Key::ArrowDown,
-            right:Key::ArrowRight,
-            left:Key::ArrowLeft,
+    const TEXTS:Lazy<HashMap<TextKey,Vec<&'static str>>> = Lazy::new(||{
+        load_texts()
+    });
+    pub fn get_text(&self,key:TextKey) -> &'static str{
+        if let Some(o) = Self::TEXTS.get(&key){
+            if let Some(i) = o.get(self.general.language as usize){
+                return i
+            }
         }
+        "text_not_found"
+    }
+}
+
+
+#[cfg(test)]
+mod test{
+    use super::*;
+    #[test]
+    fn lang_test(){
+        let mut config = Config::default();
+        config.general.language = Language::Japanese;
+        let text = config.get_text(TextKey::BuyWindowName);
+        println!("{text}");
     }
 }
