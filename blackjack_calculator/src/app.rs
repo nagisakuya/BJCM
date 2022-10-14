@@ -11,8 +11,8 @@ mod total_ev_handler;
 use total_ev_handler::*;
 
 mod config;
-use config::*;
 pub use config::TextKey;
+use config::*;
 
 mod activator;
 use activator::*;
@@ -52,7 +52,7 @@ impl AppMain {
             rule_setting_window: None,
             key_setting_window: None,
             general_setting_window: None,
-            buy_window:BuyWindow::new(),
+            buy_window: BuyWindow::new(),
             activator,
             config,
         };
@@ -78,7 +78,7 @@ impl AppMain {
 
         _self
     }
-    pub fn unactivate(mut self) -> Self{
+    pub fn unactivate(mut self) -> Self {
         self.activator.unactivate();
         self
     }
@@ -89,7 +89,10 @@ impl eframe::App for AppMain {
             .resizable(false)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    if ui.button(self.config.get_text(TextKey::GeneralSettingButton)).clicked() {
+                    if ui
+                        .button(self.config.get_text(TextKey::GeneralSettingButton))
+                        .clicked()
+                    {
                         if self.general_setting_window.is_none() {
                             self.general_setting_window = Some(GeneralSettingWindow::new(
                                 &self.config.general,
@@ -97,7 +100,10 @@ impl eframe::App for AppMain {
                             ));
                         }
                     }
-                    if ui.button(self.config.get_text(TextKey::RuleSettingWindowButton)).clicked() {
+                    if ui
+                        .button(self.config.get_text(TextKey::RuleSettingWindowButton))
+                        .clicked()
+                    {
                         if self.rule_setting_window.is_none() {
                             self.rule_setting_window = Some(RuleSettingWindow::new(
                                 &self.config.rule,
@@ -105,7 +111,10 @@ impl eframe::App for AppMain {
                             ));
                         }
                     }
-                    if ui.button(self.config.get_text(TextKey::KeySettingWindowButton)).clicked() {
+                    if ui
+                        .button(self.config.get_text(TextKey::KeySettingWindowButton))
+                        .clicked()
+                    {
                         if self.key_setting_window.is_none() {
                             self.key_setting_window = Some(KeySettingWindow::new(
                                 &self.config.kyes,
@@ -113,14 +122,14 @@ impl eframe::App for AppMain {
                             ));
                         }
                     }
-                    let text = RichText::new(self.config.get_text(TextKey::BuyWindowButton)).color(Color32::from_gray(20));
-                    let temp = Button::new(text).fill(Color32::from_rgb(255,200, 30));
+                    let text = RichText::new(self.config.get_text(TextKey::BuyWindowButton))
+                        .color(Color32::from_gray(20));
+                    let temp = Button::new(text).fill(Color32::from_rgb(255, 200, 30));
                     if !self.activator.activated && ui.add(temp).clicked() {
                         self.buy_window.opened = !self.buy_window.opened;
                     }
                 })
             });
-
         CentralPanel::default().show(ctx, |ui| {
             SidePanel::right("side_panel")
                 .resizable(false)
@@ -138,7 +147,7 @@ impl eframe::App for AppMain {
         self.table_state
             .update(ctx, &self.config, &mut self.table_history);
         if let Some(ref mut o) = self.rule_setting_window {
-            let result = o.show(ctx,&self.config);
+            let result = o.show(ctx, &self.config);
             if result.0 {
                 self.rule_setting_window = None;
                 if self.activator.check_activated() {
@@ -153,7 +162,7 @@ impl eframe::App for AppMain {
             }
         }
         if let Some(ref mut o) = self.key_setting_window {
-            let result = o.show(ctx,&self.config);
+            let result = o.show(ctx, &self.config);
             if result.0 {
                 self.key_setting_window = None;
                 if let Some(o) = result.1 {
@@ -164,9 +173,9 @@ impl eframe::App for AppMain {
                 }
             }
         }
-        
+
         if let Some(ref mut o) = self.general_setting_window {
-            let result = o.show(ctx,&self.config);
+            let result = o.show(ctx, &self.config);
             if result.0 {
                 self.general_setting_window = None;
                 if let Some(o) = result.1 {
@@ -174,7 +183,7 @@ impl eframe::App for AppMain {
                 }
             }
         }
-        self.buy_window.show(ctx,&self.config,&mut self.activator);
+        self.buy_window.show(ctx, &self.config, &mut self.activator);
     }
 }
 

@@ -197,9 +197,26 @@ impl TableState {
     const CARD_SIZE: Vec2 = vec2(75.0, 135.0);
     pub fn draw_table(&self, ui: &mut Ui) {
         let available_size = ui.available_size();
+
+        //draw discard area
+        {
+            let root_position = pos2(40.0, 80.0);
+            let rect = Rect::from_min_size(
+                pos2(root_position.x - 20.0, root_position.y - 40.0),
+                vec2(
+                    Self::CARD_SIZE.x + 50.0,
+                    Self::CARD_SIZE.y + 60.0,
+                ),
+            );
+            ui.painter()
+                .rect_filled(rect, Rounding::same(5.0), Color32::from_rgb(75, 0, 0));
+            let highlight = self.selected == Selected::Discard;
+            self.draw_hand(ui, self.discard.as_slice(), root_position, highlight);
+        }
+
         //draw dealer
         {
-            let dealer_root = pos2(available_size.x / 2.0 - Self::CARD_SIZE.x / 2.0, 80.0);
+            let dealer_root = pos2(available_size.x / 2.0, 90.0);
             let highlight = self.selected == Selected::Dealer;
             self.draw_hand(ui, self.dealer.as_slice(), dealer_root, highlight);
         }
@@ -234,22 +251,6 @@ impl TableState {
                 };
             });
         }
-
-        //draw discard area
-        {
-            let root_position = pos2(available_size.x - Self::CARD_SIZE.x - 40.0, 80.0);
-            let rect = Rect::from_min_size(
-                pos2(root_position.x - 20.0, root_position.y - 40.0),
-                vec2(
-                    Self::CARD_SIZE.x + 50.0,
-                    Self::CARD_SIZE.y + 60.0,
-                ),
-            );
-            ui.painter()
-                .rect_filled(rect, Rounding::same(5.0), Color32::from_rgb(75, 0, 0));
-            let highlight = self.selected == Selected::Discard;
-            self.draw_hand(ui, self.discard.as_slice(), root_position, highlight);
-        }
     }
     pub fn draw_deck(&self, ui: &mut Ui){
         for i in 0..10 {
@@ -263,22 +264,35 @@ impl TableState {
         }
     }
     fn draw_hand(&self, ui: &mut Ui, cards: &[Card], root_position: Pos2, highlight: bool) {
+        const SPACE_BETWEEN_CARDS:f32 = 10.0;
+        const OUTER_MARGINE:f32 = 10.0;
+        let upper_limit = ui.ctx().available_rect().top() + 10.0;
         if highlight {
-            let rect = Rect::from_min_size(
-                pos2(
-                    root_position.x - 10.0,
-                    root_position.y - 10.0 * cards.len() as f32,
-                ),
-                vec2(
-                    Self::CARD_SIZE.x + 10.0 * cards.len() as f32 + 10.0,
-                    Self::CARD_SIZE.y + cards.len() as f32 * 10.0 + 10.0,
-                ),
+            let mut upper_right_pos = pos2(
+                root_position.x - OUTER_MARGINE,
+                root_position.y - SPACE_BETWEEN_CARDS * cards.len() as f32,
             );
+            let mut size = vec2(
+                Self::CARD_SIZE.x + SPACE_BETWEEN_CARDS * cards.len() as f32 + OUTER_MARGINE,
+                Self::CARD_SIZE.y + cards.len() as f32 * SPACE_BETWEEN_CARDS + OUTER_MARGINE,
+            );
+            if upper_right_pos.y < upper_limit {
+                let temp = upper_limit - upper_right_pos.y;
+                upper_right_pos.y = upper_limit;
+                size.y -= temp;
+            }
+            let rect = Rect::from_min_size(upper_right_pos,size);
             ui.painter()
                 .rect_filled(rect, Rounding::same(5.0), Color32::from_rgb(100, 100, 100));
         }
         for (i, item) in cards.iter().enumerate() {
-            let upper_right_pos = root_position + vec2(10.0 * i as f32, -10.0 * i as f32);
+            let mut upper_right_pos = root_position + vec2(SPACE_BETWEEN_CARDS * i as f32, -SPACE_BETWEEN_CARDS * i as f32);
+            let mut size = Self::CARD_SIZE;
+            if upper_right_pos.y < upper_limit {
+                let temp = upper_limit - upper_right_pos.y;
+                upper_right_pos.y = upper_limit;
+                size.y -= temp;
+            }
             let widget_rect = Rect::from_min_size(upper_right_pos, Self::CARD_SIZE);
             ui.put(
                 widget_rect,
