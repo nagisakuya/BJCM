@@ -5,12 +5,12 @@
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     // Log to stdout (if you run with `RUST_LOG=debug`).
-    tracing_subscriber::fmt::init();
 
-    let native_options = eframe::NativeOptions::default();
+    let mut native_options = eframe::NativeOptions::default();
+    native_options.min_window_size = Some(egui::emath::Vec2 { x: 500.0, y: 400.0 });
     eframe::run_native(
         "blackjack calculator",
         native_options,
-        Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc).unactivate())),
+        Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc))),
     );
 }
