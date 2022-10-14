@@ -1,5 +1,6 @@
 use super::*;
 
+//意味不明ｗ
 macro_rules! create_text_and_enum {
     ($_enum:ident,$_fn:ident,$(($_name:ident,[$($_text:expr),*]),)*) => {
         #[derive(PartialEq,Eq,Hash)]
@@ -28,6 +29,7 @@ create_text_and_enum!(TextKey,load_texts,
     (BuyWindowT2,["Please refer to that link","こちらのwebサイトからご購入ください。"]),
     (PurchaseLink,["https://www.youtube.com/","https://www.youtube.com/"]),
     (BuyWindowUserID,["user ID:","ユーザーID:"]),
+    (BuyWindowActivationFormDescription,["Input activation code here.","アクティベーションコードを入力してください。"]),
     (RuleSettingWindowButton,["Rules Setting","ルール設定"]),
     (RuleSettingWindowName,["Rules Setting","ルール設定"]),
     (TrialVersionKeySettingMessage,[
@@ -40,6 +42,9 @@ create_text_and_enum!(TextKey,load_texts,
         "In the Trial Version,\nyou cannot change table rules.",
         "試用版ではルール設定の\n変更ができません！"
     ]),
+    (GeneralSettingWindowName,["General","設定"]),
+    (GeneralSettingButton,["General","設定"]),
+    (GeneralSettingLanguage,["Language","Language"]),
 );
 
     

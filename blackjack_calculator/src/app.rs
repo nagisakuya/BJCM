@@ -33,11 +33,12 @@ pub struct AppMain {
     total_ev_handler: TotalEvHandler,
     rule_setting_window: Option<RuleSettingWindow>,
     key_setting_window: Option<KeySettingWindow>,
+    general_setting_window: Option<GeneralSettingWindow>,
     buy_window: BuyWindow,
 }
 impl AppMain {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let activator = Activator::new();
+        let mut activator = Activator::new();
         let config = if activator.check_activated() {
             Config::load()
         } else {
@@ -50,6 +51,7 @@ impl AppMain {
             total_ev_handler: Default::default(),
             rule_setting_window: None,
             key_setting_window: None,
+            general_setting_window: None,
             buy_window:BuyWindow::new(),
             activator,
             config,
@@ -87,6 +89,14 @@ impl eframe::App for AppMain {
             .resizable(false)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
+                    if ui.button(self.config.get_text(TextKey::GeneralSettingButton)).clicked() {
+                        if self.general_setting_window.is_none() {
+                            self.general_setting_window = Some(GeneralSettingWindow::new(
+                                &self.config.general,
+                                self.activator.check_activated(),
+                            ));
+                        }
+                    }
                     if ui.button(self.config.get_text(TextKey::RuleSettingWindowButton)).clicked() {
                         if self.rule_setting_window.is_none() {
                             self.rule_setting_window = Some(RuleSettingWindow::new(
@@ -154,7 +164,17 @@ impl eframe::App for AppMain {
                 }
             }
         }
-        self.buy_window.show(ctx,&self.config);
+        
+        if let Some(ref mut o) = self.general_setting_window {
+            let result = o.show(ctx,&self.config);
+            if result.0 {
+                self.general_setting_window = None;
+                if let Some(o) = result.1 {
+                    self.config.general = o;
+                }
+            }
+        }
+        self.buy_window.show(ctx,&self.config,&mut self.activator);
     }
 }
 

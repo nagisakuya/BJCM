@@ -30,7 +30,7 @@ impl RuleSettingWindow{
     }
     pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Rule>){
         let mut result = (false,None);
-        Window::new(config.get_text(TextKey::TrialVersionRuleSettingMessage))
+        Window::new(config.get_text(TextKey::RuleSettingWindowName))
         .auto_sized()
         .collapsible(false)
         .show(ctx, |ui|{

@@ -18,7 +18,7 @@ pub use general_setting::*;
 pub struct Config {
     pub rule: Rule,
     pub kyes: Keys,
-    pub general: General,
+    pub general: GeneralSetting,
 }
 impl Config{
     pub fn load() -> Self{

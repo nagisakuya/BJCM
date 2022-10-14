@@ -1,4 +1,4 @@
-use std::{io::Read, os::windows::process::CommandExt};
+use std::{io::{Read, Write}, os::windows::process::CommandExt};
 use super::*;
 
 
@@ -16,15 +16,37 @@ impl Activator {
             },
             activated:false,
         };
-        _self.activated = _self.check_activated();
+        _self.check_activated();
         _self
     }
-    pub fn check_activated(&self) -> bool{
-        self.code.is_some() && Self::get_hash() == self.code.unwrap()
+    pub fn check_activated(&mut self) -> bool{
+        let temp = self.code.is_some() && Self::get_hash() == self.code.unwrap();
+        self.activated = temp;
+        temp
     }
     pub fn unactivate(&mut self){
         self.code = None;
         self.activated = false;
+    }
+    pub fn activate(&mut self,code:&String) -> Result<(),String>{
+        self.code = Some(match code.parse(){
+            Ok(o) => o,
+            Err(_) => return Err("Invalid string in the activation code.".to_string()),
+        });
+        self.check_activated();
+        if self.activated{
+            let mut file = match std::fs::File::create(ACTIVATION_CODE_PATH){  
+                Ok(o) => o,
+                Err(_) => return Err("Failed to save activation code.".to_string()),
+            };
+            match write!(file,"{:?}",self.code.unwrap()){  
+                Ok(o) => o,
+                Err(_) => return Err("Failed to save activation code.".to_string()),
+            };
+        }else{
+            return Err("Invalid activation code.".to_string());
+        }
+        Ok(())
     }
     fn load_code() -> Result<u64,()>{
         let mut file = match std::fs::File::open(ACTIVATION_CODE_PATH){
@@ -39,11 +61,8 @@ impl Activator {
         }
     }
     fn get_hash() -> u64{
-        use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher};
         let temp = Activator::get_pcid();
-        let mut hasher = DefaultHasher::new();
-        temp.hash(&mut hasher);
-        hasher.finish()
+        code_gen_lib::generate_hash(temp)
     }
     pub fn get_pcid() -> String {
         let process = std::process::Command::new("reg",)
