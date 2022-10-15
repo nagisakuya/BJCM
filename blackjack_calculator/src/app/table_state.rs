@@ -26,17 +26,22 @@ pub struct TableState {
     pub(super) deck: Deck,
     player: Player<PhandWithResult>,
     dealer: Dealer,
-    selected: Selected,
+    selected_current: Selected,
+    selected_base : Selected,
     discard: Vec<Card>,
     card_texture: [Option<TextureHandle>; 10],
 }
 impl TableState{
-    pub fn new(rule:&Rule) -> Self{
+    pub fn new(config:&Config) -> Self{
         Self {
-            deck: Deck::new(rule.NUMBER_OF_DECK),
-            player: Player::Single(PhandWithResult::new()),
+            deck: Deck::new(config.rule.NUMBER_OF_DECK),
+            player: match config.general.number_of_player{
+                1 => Player::Single(PhandWithResult::new()),
+                x => Player::Splitted(vec![PhandWithResult::new();x]),
+            } ,
             dealer: Dealer::new(),
-            selected: Selected::Dealer,
+            selected_current: Selected::Player(0),
+            selected_base : Selected::Player(0),
             discard: Vec::new(),
             card_texture: Default::default(),
         }
@@ -60,7 +65,7 @@ impl TableState {
                     continue;
                 }
                 updated = true;
-                match self.selected {
+                match self.selected_current {
                     Selected::Player(pos) => {
                         self.player
                             .get_mut(pos)
@@ -80,14 +85,14 @@ impl TableState {
         }
         if ctx.input().key_pressed(config.kyes.next) {
             updated = true;
-            self.next(&config.rule);
+            self.next(&config);
         }
         if ctx.input().key_pressed(config.kyes.reset) {
             updated = true;
-            self.reset(&config.rule);
+            self.reset(&config);
         }
         if ctx.input().key_pressed(config.kyes.split) {
-            if let Selected::Player(pos) = self.selected {
+            if let Selected::Player(pos) = self.selected_current {
                 let hand = self.player.get_mut(pos);
                 if hand.is_twin() {
                     let temp = hand.divide();
@@ -111,54 +116,65 @@ impl TableState {
         }
         self.updare_selected(ctx,config);
     }
-    pub fn reset(&mut self,rule:&Rule){
+    pub fn reset(&mut self,config:&Config){
         *self = Self{
             card_texture:self.card_texture.clone(),
-            ..Self::new(rule)
+            ..Self::new(config)
         }
     }
-    fn next(&mut self,rule:&Rule){
+    pub fn next(&mut self,config:&Config){
         *self = Self{
             card_texture:self.card_texture.clone(),
             deck:self.deck.clone(),
-            ..Self::new(rule)
+            ..Self::new(config)
         }
     }
     fn updare_selected(&mut self,ctx:&Context,config:&Config){
         if ctx.input().key_pressed(config.kyes.right) {
-            match self.selected {
+            match self.selected_base {
                 Selected::Player(pos) => {
                     if pos == self.player.len() - 1 {
-                        self.selected = Selected::Player(0);
+                        self.selected_base = Selected::Player(0);
                     } else {
-                        self.selected = Selected::Player(pos + 1);
+                        self.selected_base = Selected::Player(pos + 1);
                     }
                 }
-                Selected::Dealer => self.selected = Selected::Discard,
-                Selected::Discard => self.selected = Selected::Dealer,
+                Selected::Dealer => self.selected_base = Selected::Discard,
+                Selected::Discard => self.selected_base = Selected::Dealer,
             }
         };
         if ctx.input().key_pressed(config.kyes.left) {
-            match self.selected {
+            match self.selected_base {
                 Selected::Player(pos) => {
                     if pos == 0 {
-                        self.selected =
+                        self.selected_base =
                             Selected::Player(self.player.len() - 1);
                     } else {
-                        self.selected = Selected::Player(pos - 1);
+                        self.selected_base = Selected::Player(pos - 1);
                     }
                 }
-                Selected::Dealer => self.selected = Selected::Discard,
-                Selected::Discard => self.selected = Selected::Dealer,
+                Selected::Dealer => self.selected_base = Selected::Discard,
+                Selected::Discard => self.selected_base = Selected::Dealer,
             }
         };
         if ctx.input().key_pressed(config.kyes.up) || ctx.input().key_pressed(config.kyes.down) {
-            match self.selected {
-                Selected::Player(_) => self.selected = Selected::Dealer,
-                Selected::Dealer => self.selected = Selected::Player(0),
-                Selected::Discard => self.selected = Selected::Player(0),
+            match self.selected_base {
+                Selected::Player(_) => self.selected_base = Selected::Dealer,
+                Selected::Dealer => self.selected_base = Selected::Player(0),
+                Selected::Discard => self.selected_base = Selected::Player(0),
             }
         };
+
+        //更新
+        if ctx.input().key_down(config.kyes.dealer){
+            self.selected_current = Selected::Discard;
+        }
+        else if ctx.input().key_down(config.kyes.discard){
+            self.selected_current = Selected::Dealer;
+        }
+        else{
+            self.selected_current = self.selected_base.clone();
+        }
     }
     fn update_hand_ev(&mut self, rule: &Rule) {
         self.player.for_each_mut(|phand, _| {
@@ -210,14 +226,14 @@ impl TableState {
             );
             ui.painter()
                 .rect_filled(rect, Rounding::same(5.0), Color32::from_rgb(75, 0, 0));
-            let highlight = self.selected == Selected::Discard;
+            let highlight = self.selected_current == Selected::Discard;
             self.draw_hand(ui, self.discard.as_slice(), root_position, highlight);
         }
 
         //draw dealer
         {
             let dealer_root = pos2(available_size.x / 2.0, 90.0);
-            let highlight = self.selected == Selected::Dealer;
+            let highlight = self.selected_current == Selected::Dealer;
             self.draw_hand(ui, self.dealer.as_slice(), dealer_root, highlight);
         }
 
@@ -230,7 +246,7 @@ impl TableState {
                     space * (i + 1) as f32 - Self::CARD_SIZE.x / 2.0,
                     available_size.y - space_bottom - Self::CARD_SIZE.y,
                 );
-                let highlight = self.selected.is_player(i);
+                let highlight = self.selected_current.is_player(i);
                 self.draw_hand(ui, p.as_slice(), root_position, highlight);
 
                 let widget_rect = Rect::from_min_size(

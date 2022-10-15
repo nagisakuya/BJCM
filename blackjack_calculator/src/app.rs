@@ -47,7 +47,7 @@ impl AppMain {
         };
 
         let mut _self = Self {
-            table_state: TableState::new(&config.rule),
+            table_state: TableState::new(&config),
             table_history: VecDeque::new(),
             total_ev_handler: Default::default(),
             rule_setting_window: None,
@@ -162,7 +162,7 @@ impl eframe::App for AppMain {
                         self.config.rule = o;
                         self.config.save();
                         self.total_ev_handler.reset();
-                        self.table_state.reset(&self.config.rule);
+                        self.table_state.reset(&self.config);
                         self.table_history = Default::default();
                     }
                 }
@@ -187,6 +187,7 @@ impl eframe::App for AppMain {
                 self.general_setting_window = None;
                 if let Some(o) = result.1 {
                     self.config.general = o;
+                    self.table_state.next(&self.config);
                 }
             }
         }

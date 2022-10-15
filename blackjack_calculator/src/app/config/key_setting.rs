@@ -13,6 +13,8 @@ pub struct Keys{
     pub down:Key,
     pub right:Key,
     pub left:Key,
+    pub dealer:Key,
+    pub discard:Key,
 }
 
 impl Default for Keys{
@@ -38,6 +40,8 @@ impl Default for Keys{
             down:Key::ArrowDown,
             right:Key::ArrowRight,
             left:Key::ArrowLeft,
+            dealer:Key::D,
+            discard:Key::Space,
         }
     }
 }
@@ -92,6 +96,8 @@ impl KeySettingWindow{
                 generate_combobox!("8",ui,self.keys.card[7]);
                 generate_combobox!("9",ui,self.keys.card[8]);
                 generate_combobox!("Ten",ui,self.keys.card[9]);
+                generate_combobox!("Toggle Dealer",ui,self.keys.dealer);
+                generate_combobox!("Toggle Discard",ui,self.keys.discard);
             });
             if !self.is_activated{
                 ui.label(RichText::new(config.get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
@@ -155,7 +161,6 @@ static KEY_LIST:Lazy<Vec<Key>> = Lazy::new(||vec![
     Key::ArrowUp,
     
     Key::Escape,
-    Key::Tab,
     Key::Backspace,
     Key::Enter,
     Key::Space,
