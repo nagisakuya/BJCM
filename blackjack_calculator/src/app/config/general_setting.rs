@@ -1,10 +1,6 @@
 use super::*;
-use std::collections::HashMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-
-mod texts;
-pub use texts::*;
 
 #[derive(PartialEq, Eq, Hash, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GeneralSetting {

@@ -45,6 +45,8 @@ create_text_and_enum!(TextKey,load_texts,
     (GeneralSettingWindowName,["General","設定"]),
     (GeneralSettingButton,["General","設定"]),
     (GeneralSettingLanguage,["Language","Language"]),
+    (HowToUseButton,["HowToUse","操作説明"]),
+    (HowToUseURL,["./data/description/description.html","./data/description/description.html"]),
 );
 
     

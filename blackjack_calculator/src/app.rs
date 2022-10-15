@@ -2,6 +2,7 @@ pub use blackjack_lib::*;
 pub use eframe::egui::*;
 
 use std::collections::VecDeque;
+use std::process::Command;
 use std::time::{Duration, Instant};
 
 mod table_state;
@@ -121,6 +122,12 @@ impl eframe::App for AppMain {
                                 self.activator.check_activated(),
                             ));
                         }
+                    }
+                    if ui
+                        .button(self.config.get_text(TextKey::HowToUseButton))
+                        .clicked()
+                    {
+                        Command::new("cmd").args(["/c","start",self.config.get_text(TextKey::HowToUseURL)]).status().unwrap();
                     }
                     let text = RichText::new(self.config.get_text(TextKey::BuyWindowButton))
                         .color(Color32::from_gray(20));

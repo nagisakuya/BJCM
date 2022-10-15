@@ -12,6 +12,9 @@ pub use key_setting::*;
 pub mod general_setting;
 pub use general_setting::*;
 
+pub mod texts;
+pub use texts::*;
+
 
 
 #[derive(Default,serde::Serialize,serde::Deserialize)]

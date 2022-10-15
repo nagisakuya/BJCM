@@ -41,7 +41,7 @@ impl Activator {
             };
             match write!(file,"{:?}",self.code.unwrap()){  
                 Ok(o) => o,
-                Err(_) => return Err("Failed to save activation code.".to_string()),
+                Err(_) => return Err("Failed to save activation code!".to_string()),
             };
         }else{
             return Err("Invalid activation code.".to_string());
