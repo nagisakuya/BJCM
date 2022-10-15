@@ -167,10 +167,10 @@ impl TableState {
 
         //更新
         if ctx.input().key_down(config.kyes.dealer){
-            self.selected_current = Selected::Discard;
+            self.selected_current = Selected::Dealer;
         }
         else if ctx.input().key_down(config.kyes.discard){
-            self.selected_current = Selected::Dealer;
+            self.selected_current = Selected::Discard;
         }
         else{
             self.selected_current = self.selected_base.clone();

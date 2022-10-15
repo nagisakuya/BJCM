@@ -149,7 +149,7 @@ impl TotalEvHandler {
                     } else {
                         (Instant::now() - s.1).as_secs() / 5 * 5
                     };
-                    format!("{:4>+1.3}%({:>2}秒前)", percent, ago)
+                    format!("{:4>+1.3}%\n({:>2}秒前)", percent, ago)
                 }
                 None => "".to_owned(),
             })
