@@ -18,13 +18,17 @@ use config::*;
 mod activator;
 use activator::*;
 
+mod asset_manager;
+use asset_manager::*;
+
 mod buy_window;
 use buy_window::*;
 
 const IMAGE_FOLDER_PATH: &str = "./data/images";
 const SUBPROCESS_PATH: &str = "./data/calc_ev_subprocess.exe";
-const SETTING_FILE_PATH: &str = "./data/setting.bin";
 const ACTIVATION_CODE_PATH: &str = "./data/activation_code.txt";
+const SETTING_FILE_PATH: &str = "./data/setting.bin";
+const ASSET_FILE_PATH: &str = "./data/asset.bin";
 
 pub struct AppMain {
     config: Config,
@@ -35,6 +39,7 @@ pub struct AppMain {
     rule_setting_window: Option<RuleSettingWindow>,
     key_setting_window: Option<KeySettingWindow>,
     general_setting_window: Option<GeneralSettingWindow>,
+    asset_manager: AssetManager,
     buy_window: BuyWindow,
 }
 impl AppMain {
@@ -53,6 +58,7 @@ impl AppMain {
             rule_setting_window: None,
             key_setting_window: None,
             general_setting_window: None,
+            asset_manager: AssetManager::load(),
             buy_window: BuyWindow::new(),
             activator,
             config,
@@ -127,7 +133,16 @@ impl eframe::App for AppMain {
                         .button(self.config.get_text(TextKey::HowToUseButton))
                         .clicked()
                     {
-                        Command::new("cmd").args(["/c","start",self.config.get_text(TextKey::HowToUseURL)]).status().unwrap();
+                        Command::new("cmd")
+                            .args(["/c", "start", self.config.get_text(TextKey::HowToUseURL)])
+                            .status()
+                            .unwrap();
+                    }
+                    if ui
+                        .button(self.config.get_text(TextKey::AssetButton))
+                        .clicked()
+                    {
+                        self.asset_manager.opened = !self.asset_manager.opened;
                     }
                     let text = RichText::new(self.config.get_text(TextKey::BuyWindowButton))
                         .color(Color32::from_gray(20));
@@ -137,22 +152,25 @@ impl eframe::App for AppMain {
                     }
                 })
             });
-        CentralPanel::default().show(ctx, |ui| {
-            SidePanel::right("side_panel")
-                .resizable(false)
-                .show_inside(ui, |ui| {
-                    self.table_state.draw_deck(ui);
-                    ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
-                        ui.add_space(10.0);
-                        self.total_ev_handler.draw_contents(ui, &self.table_state);
+        SidePanel::right("side_panel")
+            .resizable(false)
+            .max_width(140.0)
+            .show(ctx, |ui| {
+                self.table_state.show_deck(ui, &self.config);
+                TopBottomPanel::bottom("total_ev_handler")
+                    .resizable(false)
+                    .frame(Frame::default().outer_margin(style::Margin::same(0.0)))
+                    .show_inside(ui, |ui| {
+                        ui.vertical_centered(|ui| {
+                            self.total_ev_handler.draw_contents(ui, &self.table_state);
+                            self.asset_manager
+                                .show_bet_text(ui, self.total_ev_handler.get_ev());
+                        });
                     });
-                });
+            });
+        CentralPanel::default().show(ctx, |ui| {
             self.table_state.draw_table(ui);
         });
-        self.total_ev_handler
-            .update(&self.config, &self.table_state.deck);
-        self.table_state
-            .update(ctx, &self.config, &mut self.table_history);
         if let Some(ref mut o) = self.rule_setting_window {
             let result = o.show(ctx, &self.config);
             if result.0 {
@@ -192,6 +210,15 @@ impl eframe::App for AppMain {
             }
         }
         self.buy_window.show(ctx, &self.config, &mut self.activator);
+        let disable_key_input = self.asset_manager.show(ctx, &self.config);
+
+        self.total_ev_handler
+            .update(&self.config, &self.table_state.deck);
+
+        if !disable_key_input {
+            self.table_state
+                .update(ctx, &self.config, &mut self.table_history);
+        }
     }
 }
 

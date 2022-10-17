@@ -16,7 +16,6 @@ pub mod texts;
 pub use texts::*;
 
 
-
 #[derive(Default,serde::Serialize,serde::Deserialize)]
 pub struct Config {
     pub rule: Rule,

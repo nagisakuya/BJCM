@@ -29,6 +29,12 @@ impl Default for TotalEvHandler {
     }
 }
 impl TotalEvHandler {
+    pub fn get_ev(&self) -> Option<f32>{
+        match &self.total_ev {
+            Some(x) => {Some(x.0)},
+            None => {None},
+        }
+    }
     pub fn setup(&mut self, cc: &eframe::CreationContext<'_>) {
         let image = load_image_from_path(&format!("{}/play.png",IMAGE_FOLDER_PATH)).unwrap();
         self.textures[0] = Some(cc.egui_ctx.load_texture("play", image));
@@ -117,43 +123,45 @@ impl TotalEvHandler {
         };
     }
     pub fn draw_contents(&mut self, ui: &mut Ui, table_state: &TableState) {
-        if self.calculate {
-            if ui
-                .add(ImageButton::new(
-                    self.textures[1].as_ref().unwrap(),
-                    vec2(50.0, 50.0),
-                ))
-                .clicked()
-            {
-                self.stop();
-            };
-        } else {
-            if ui
-                .add(ImageButton::new(
-                    self.textures[0].as_ref().unwrap(),
-                    vec2(50.0, 50.0),
-                ))
-                .clicked()
-            {
-                self.calculate = true;
-            };
-        }
-        ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
-        ui.label(
-            RichText::new(match self.total_ev {
-                Some(ref mut s) => {
-                    let percent = s.0 * 100.0;
-                    let ago = if table_state.deck.eq(&s.2) {
-                        s.1 = Instant::now();
-                        0
-                    } else {
-                        (Instant::now() - s.1).as_secs() / 5 * 5
-                    };
-                    format!("{:4>+1.3}%\n({:>2}秒前)", percent, ago)
-                }
-                None => "".to_owned(),
-            })
-            .size(20.0),
-        );
+        ui.vertical_centered(|ui|{
+            if self.calculate {
+                if ui
+                    .add(ImageButton::new(
+                        self.textures[1].as_ref().unwrap(),
+                        vec2(50.0, 50.0),
+                    ))
+                    .clicked()
+                {
+                    self.stop();
+                };
+            } else {
+                if ui
+                    .add(ImageButton::new(
+                        self.textures[0].as_ref().unwrap(),
+                        vec2(50.0, 50.0),
+                    ))
+                    .clicked()
+                {
+                    self.calculate = true;
+                };
+            }
+            ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
+            ui.label(
+                RichText::new(match self.total_ev {
+                    Some(ref mut s) => {
+                        let percent = s.0 * 100.0;
+                        let ago = if table_state.deck.eq(&s.2) {
+                            s.1 = Instant::now();
+                            0
+                        } else {
+                            (Instant::now() - s.1).as_secs() / 5 * 5
+                        };
+                        format!("{:4>+1.3}%\n({:>2}秒前)", percent, ago)
+                    }
+                    None => "\n".to_owned(),
+                })
+                .size(20.0),
+            );
+        });
     }
 }

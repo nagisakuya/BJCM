@@ -47,6 +47,10 @@ create_text_and_enum!(TextKey,load_texts,
     (GeneralSettingLanguage,["◇Language","◇Language"]),
     (HowToUseButton,["HowToUse","操作説明"]),
     (HowToUseURL,["./data/description/description.html","./data/description/description.html"]),
+    (AssetButton,["Asset","資金管理"]),
+    (AssetWindowName,["Asset","資金管理"]),
+    (EstimatedRTPLabel,["est. RTP","概算RTP"]),
+    
 );
 
     
