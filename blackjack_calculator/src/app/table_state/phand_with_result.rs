@@ -30,12 +30,23 @@ pub(super) struct PhandWithResult{
     pub result:CalculationResult<Action>,
 }
 
-impl PhandWithResult{
-    pub fn new() -> Self{
+impl Default for PhandWithResult{
+    fn default() -> Self {
         PhandWithResult{
             phand:PhandForPlay::new(),
             result:CalculationResult::Result(None),
         }
+    }
+}
+impl PhandWithResult{
+    /*pub fn new() -> Self{
+        PhandWithResult{
+            phand:PhandForPlay::new(),
+            result:CalculationResult::Result(None),
+        }
+    }*/
+    pub fn _clear(&mut self){
+        self.phand = PhandForPlay::new();
     }
     pub fn divide(&mut self) -> Self{
         PhandWithResult{

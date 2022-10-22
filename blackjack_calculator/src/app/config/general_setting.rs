@@ -5,13 +5,11 @@ use strum_macros::EnumIter;
 #[derive(PartialEq, Eq, Hash, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GeneralSetting {
     pub language: Language,
-    pub number_of_player: usize,
 }
 impl Default for GeneralSetting {
     fn default() -> Self {
         GeneralSetting {
             language: Language::Japanese,
-            number_of_player: 1,
         }
     }
 }
@@ -28,7 +26,7 @@ impl GeneralSettingWindow {
         }
     }
     pub fn show(&mut self, ctx: &Context, config: &Config) -> (bool, Option<GeneralSetting>) {
-        let mut result = (false, None);
+        let result = (false, None);
         Window::new(config.get_text(TextKey::GeneralSettingWindowName))
             .auto_sized()
             .collapsible(false)
@@ -45,17 +43,6 @@ impl GeneralSettingWindow {
                             );
                         }
                     });
-                ui.label("◇number of player");
-                ui.add(Slider::new(&mut self.general.number_of_player,1..=8));
-                ui.horizontal(|ui| {
-                    if ui.button("cancel").clicked() {
-                        result.0 = true;
-                    }
-                    if ui.button("apply").clicked() {
-                        result.0 = true;
-                        result.1 = Some(self.general.clone());
-                    }
-                });
             });
         result
     }

@@ -216,7 +216,6 @@ impl eframe::App for AppMain {
                 self.general_setting_window = None;
                 if let Some(o) = result.1 {
                     self.config.general = o;
-                    self.table_state.next(&self.config);
                 }
             }
         }
