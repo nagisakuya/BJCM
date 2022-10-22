@@ -28,6 +28,7 @@ impl<T> Clone for CalculationResult<T> {
 pub(super) struct PhandWithResult{
     phand:PhandForPlay,
     pub result:CalculationResult<Action>,
+    pub is_player:bool,
 }
 
 impl Default for PhandWithResult{
@@ -35,16 +36,18 @@ impl Default for PhandWithResult{
         PhandWithResult{
             phand:PhandForPlay::new(),
             result:CalculationResult::Result(None),
+            is_player:false,
         }
     }
 }
 impl PhandWithResult{
-    /*pub fn new() -> Self{
+    pub fn new(is_player:bool) -> Self{
         PhandWithResult{
             phand:PhandForPlay::new(),
             result:CalculationResult::Result(None),
+            is_player
         }
-    }*/
+    }
     pub fn _clear(&mut self){
         self.phand = PhandForPlay::new();
     }
@@ -52,13 +55,19 @@ impl PhandWithResult{
         PhandWithResult{
             phand:self.phand.divide(),
             result:CalculationResult::Result(None),
+            is_player:self.is_player,
         }
     }
     pub fn _actionable(&self) -> bool{
         self.phand.actionable()
     }
 }
-
+impl std::ops::Deref for PhandWithResult{
+    type Target = PhandForPlay;
+    fn deref(&self) -> &Self::Target {
+        &self.phand
+    }
+}
 impl PhandTrait for PhandWithResult{
     fn as_mut_phand(&mut self) ->&mut Phand {
         self.phand.as_mut_phand()

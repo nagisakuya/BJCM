@@ -54,7 +54,7 @@ impl Stepper {
     }
     pub fn reset(&mut self, players: usize) -> Selected {
         self.current = 0;
-        self.get_entry(players, 0)
+        self.get_entry_current(players)
     }
     fn get_entry(&self, players: usize, index: usize) -> Selected {
         match self.vec.get(index).unwrap() {

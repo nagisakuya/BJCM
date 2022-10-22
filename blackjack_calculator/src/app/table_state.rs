@@ -4,13 +4,12 @@ use std::io::Read;
 use std::os::windows::process::CommandExt;
 use std::thread;
 
-mod phand_with_result;
 mod draw;
+mod phand_with_result;
 mod selected;
-use selected::*;
 use eframe::epaint::TextShape;
 use phand_with_result::*;
-
+use selected::*;
 
 #[derive(Clone)]
 pub struct TableState {
@@ -21,6 +20,7 @@ pub struct TableState {
     stepper: Stepper,
     selected_current: Selected,
     selected_base: Selected,
+    betsize: Option<u32>,
     discard: Vec<Card>,
     card_texture: [Option<TextureHandle>; 10],
 }
@@ -28,12 +28,13 @@ impl TableState {
     pub fn new(config: &Config) -> Self {
         Self {
             deck: Deck::new(config.rule.NUMBER_OF_DECK),
-            players: VecDeque::from(vec![PhandWithResult::default()]),
-            base_players: VecDeque::from(vec![PhandWithResult::default()]),
+            players: VecDeque::from(vec![PhandWithResult::new(true)]),
+            base_players: VecDeque::from(vec![PhandWithResult::new(true)]),
             dealer: Dealer::new(),
             selected_current: Selected::Player(0),
             selected_base: Selected::Player(0),
             discard: Vec::new(),
+            betsize: None,
             card_texture: Default::default(),
             stepper: Default::default(),
         }
@@ -48,20 +49,33 @@ impl TableState {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context, config: &Config, history: &mut VecDeque<TableState>) {
-        const HISTORY_LIMIT:usize = 100;
+    pub fn update(
+        &mut self,
+        ctx: &Context,
+        config: &Config,
+        history: &mut VecDeque<TableState>,
+        betsize: u32,
+        asset: &mut AssetManager
+    ) {
+        const HISTORY_LIMIT: usize = 100;
         self.check_join_result();
         let previous = self.clone();
         let mut updated = false;
         for i in 0..10 {
             if ctx.input().key_pressed(config.kyes.card[i]) {
+                if self.betsize == None {
+                    self.betsize = Some(betsize);
+                }
                 if !self.deck.drawable(i) {
                     continue;
                 }
                 updated = true;
                 match self.selected_current {
                     Selected::Player(pos) => {
-                        self.players.get_mut(pos).unwrap().push(Card::new(i).unwrap());
+                        self.players
+                            .get_mut(pos)
+                            .unwrap()
+                            .push(Card::new(i).unwrap());
                         self.deck.draw(i);
                     }
                     Selected::Dealer => {
@@ -78,11 +92,11 @@ impl TableState {
         }
         if ctx.input().key_pressed(config.kyes.next) {
             updated = true;
-            self.next();
+            asset.add_current(self.next());
         }
         if ctx.input().key_pressed(config.kyes.reset) {
             updated = true;
-            self.reset(&config);
+            asset.add_current(self.reset(&config));
         }
         if ctx.input().key_pressed(config.kyes.step) {
             self.step_force();
@@ -113,19 +127,28 @@ impl TableState {
         self.update_selected(ctx, config);
     }
 
-    pub fn reset(&mut self, config: &Config) {
-        self.next();
+    pub fn reset(&mut self, config: &Config) ->i32 {
         self.deck = Deck::new(config.rule.NUMBER_OF_DECK);
+        self.next()
     }
 
-    pub fn next(&mut self) {
+    pub fn next(&mut self) -> i32 {
+        let mut profit = 0;
+        if let Some(b) = self.betsize {
+            for phand in self.players.iter() {
+                if phand.is_player {
+                    profit += (b as f32 * phand.calc_payout(&self.dealer)) as i32;
+                }
+            }
+        }
         self.dealer = Dealer::new();
         self.players = self.base_players.clone();
         self.discard = Vec::new();
-        self.selected_base = Selected::Dealer;
-        self.stepper.reset(self.players.len());
+        self.selected_base = self.stepper.reset(self.players.len());
+
+        profit
     }
-    
+
     fn update_selected(&mut self, ctx: &Context, config: &Config) {
         if ctx.input().key_pressed(config.kyes.right) {
             match self.selected_base {
@@ -172,7 +195,7 @@ impl TableState {
     }
 
     fn update_hand_ev(&mut self, rule: &Rule) {
-        for phand in self.players.iter_mut(){
+        for phand in self.players.iter_mut() {
             if self.dealer.len() == 1 && phand.len() >= 2 {
                 let phand_str =
                     io_util::bytes_to_string(&bincode::serialize(&phand.as_phand()).unwrap());
@@ -201,9 +224,8 @@ impl TableState {
         }
     }
     fn check_join_result(&mut self) {
-        for phand in self.players.iter_mut(){
+        for phand in self.players.iter_mut() {
             phand.result.check();
         }
     }
-    
 }

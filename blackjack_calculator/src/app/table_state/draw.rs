@@ -38,7 +38,7 @@ impl TableState{
             ui.painter()
                 .rect_filled(rect, Rounding::same(5.0), Color32::from_rgb(75, 0, 0));
             let highlight = self.selected_current == Selected::Discard;
-            self.draw_hand(ui, self.discard.as_slice(), root_position, Vec2::new(25.0, 0.0),highlight);
+            Self::draw_hand(ui, self.discard.as_slice(), root_position, Vec2::new(25.0, 0.0),highlight);
         }
 
         //draw dealer
@@ -46,21 +46,22 @@ impl TableState{
             const TOP_MARGIN:f32 = 20.0;
             let dealer_root = pos2(available_rect.width() / 2.0 - Self::CARD_SIZE.x/2.0 - 25.0, available_rect.top() + TOP_MARGIN);
             let highlight = self.selected_current == Selected::Dealer;
-            self.draw_hand(ui, self.dealer.as_slice(), dealer_root,Vec2::new(25.0, 0.0), highlight);
+            Self::draw_hand(ui, self.dealer.as_slice(), dealer_root,Vec2::new(25.0, 0.0), highlight);
         }
 
         //draw player
         {
-            for (i,phand) in self.players.iter().enumerate(){
-                const BOTTOM_MARGIN:f32 = 20.0;
-                let space_width = available_rect.width() - Self::CARD_SIZE.x * self.players.len() as f32 - SIDE_BUTTON_SIZE * 2.0;
-                let space_per_hand = space_width / (self.players.len() + 1) as f32;
+            let players_len = self.players.len() as f32;
+            for (i,phand) in self.players.iter_mut().enumerate(){
+                const BOTTOM_MARGIN:f32 = 30.0;
+                let space_width = available_rect.width() - Self::CARD_SIZE.x * players_len - SIDE_BUTTON_SIZE * 2.0;
+                let space_per_hand = space_width / (players_len + 1.0);
                 let pos = pos2(
                     available_rect.left() + SIDE_BUTTON_SIZE + space_per_hand * (i + 1) as f32 + Self::CARD_SIZE.x * i as f32,
                     available_rect.bottom() - BOTTOM_MARGIN - Self::CARD_SIZE.y,
                 );
                 let highlight = self.selected_current.is_player(i);
-                self.draw_hand(ui, phand.as_slice(), pos,Vec2::new(0.0, -30.0), highlight);
+                Self::draw_hand(ui, phand.as_slice(), pos,Vec2::new(0.0, -30.0), highlight);
 
                 let result_area_rect = Rect::from_min_size(
                     pos + vec2(0.0, Self::CARD_SIZE.y + 5.0),
@@ -74,7 +75,27 @@ impl TableState{
                         ui.put(result_area_rect, Label::new(&format!("{:?}", x)));
                     }
                     _ =>  {
-                        ui.put(result_area_rect, Label::new(&format!("◆")));
+                        if self.dealer.len() == 0 && phand.len() == 0{
+                            let rect = Rect::from_center_size(result_area_rect.center(),Vec2::new(25.0,25.0));
+                            if phand.is_player{
+                                if ui.put(rect, Button::new(&format!("◆"))).clicked(){
+                                    phand.is_player = false;
+                                    self.base_players.get_mut(i).unwrap().is_player = false;
+                                };
+                            }
+                            else{
+                                if ui.put(rect, Button::new(&format!("◇"))).clicked(){
+                                    phand.is_player = true;
+                                    self.base_players.get_mut(i).unwrap().is_player = true;
+                                };
+                            }
+                        }else{
+                            if phand.is_player{
+                                ui.put(result_area_rect, Label::new("◆"));
+                            }else{
+                                ui.put(result_area_rect, Label::new("◇"));
+                            }
+                        }
                     },
                 };
             }
@@ -124,7 +145,7 @@ impl TableState{
 
     }
 
-    fn draw_hand(&self, ui: &mut Ui, cards: &[Card], pos: Pos2, step:Vec2 , highlight: bool) {
+    fn draw_hand(ui: &mut Ui, cards: &[Card], pos: Pos2, step:Vec2 , highlight: bool) {
         const OUTER_MARGINE: f32 = 5.0;
         let upper_limit = ui.ctx().available_rect().top() + 10.0;
         if highlight {

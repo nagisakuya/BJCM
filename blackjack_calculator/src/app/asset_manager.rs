@@ -1,10 +1,14 @@
+use std::str::FromStr;
+
 use super::*;
 
 use super::ASSET_FILE_PATH;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize ,PartialEq)]
 pub struct AssetManager {
-    total_asset: u32,
+    total_asset: i32,
+    diff_between_current_asset: i32,
+    current_asset: i32,
     min_bet: u32,
     max_bet: u32,
     bet_step: u32,
@@ -16,6 +20,8 @@ impl Default for AssetManager {
     fn default() -> Self {
         AssetManager {
             total_asset: 0,
+            diff_between_current_asset: 0,
+            current_asset: 0,
             min_bet: 0,
             max_bet: 1000,
             bet_step: 10,
@@ -26,9 +32,13 @@ impl Default for AssetManager {
 }
 
 impl AssetManager {
-    fn _save(&self) {
+    fn save(&self) {
         let mut file = std::fs::File::create(ASSET_FILE_PATH).unwrap();
         std::io::Write::write_all(&mut file, &bincode::serialize(self).unwrap()).unwrap();
+    }
+    pub fn add_current(&mut self, i: i32) {
+        self.current_asset += i;
+        self.save()
     }
     pub fn load() -> Self {
         if let Ok(bin) = std::fs::read(ASSET_FILE_PATH) {
@@ -37,15 +47,28 @@ impl AssetManager {
             Default::default()
         }
     }
-    pub fn show_bet_text(&self, ui: &mut Ui, ev: Option<f32>) {
-        let mut text = String::from("bet:");
-        if let Some(ev) = ev {
-            text += &self.calc_betsize(ev).to_string()
+    pub fn draw_compornents(&mut self, ui: &mut Ui, ev: Option<f32>, input_flag: &mut bool) -> u32 {
+        let betsize = if let Some(ev) = ev {
+            self.calc_betsize(ev)
         } else {
-            text += &format!("{}", self.min_bet)
+            self.min_bet
         };
 
+        let text = format!("bet:{betsize}");
+
         ui.label(RichText::new(text).size(20.0));
+
+        ui.horizontal(|ui|{
+            ui.label("asset:");
+            Self::add_numonly_textedit(ui, &mut self.current_asset, input_flag, 100.0);
+            let temp = self.current_asset + self.diff_between_current_asset;
+            if self.total_asset != temp{
+                self.total_asset = temp;
+                self.save();
+            }
+        });
+
+        betsize
     }
     pub fn calc_betsize(&self, ev: f32) -> u32 {
         let bet = self.total_asset as f32 * ev;
@@ -65,49 +88,66 @@ impl AssetManager {
 
         bet
     }
-    pub fn show(&mut self, ctx: &Context, config: &Config) -> bool {
-        let mut disable_key_input = false;
+    pub fn show_window(&mut self, ctx: &Context, config: &Config, input_flag: &mut bool) {
+        let temp = self.clone();
         Window::new(config.get_text(TextKey::AssetWindowName))
             .auto_sized()
             .collapsible(false)
             .open(&mut self.opened)
             .show(ctx, |ui| {
-                let mut add_num_textedit = |ui: &mut Ui, num: &mut u32| {
-                    let mut text = num.to_string();
-                    let resp = ui.add(TextEdit::singleline(&mut text).desired_width(140.0));
-                    if resp.changed() {
-                        if text.is_empty(){
-                            *num = 0;
-                        }else if let Ok(o) = text.parse() {
-                            *num = o;
-                        }
-                    }
-                    if resp.has_focus() {
-                        disable_key_input = true;
-                    }
+                let mut add_textedit = |ui: &mut Ui, num| {
+                    Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
-
-                const SPACE:f32 = 3.0;
+                const SPACE: f32 = 3.0;
                 ui.label("◇asset");
-                add_num_textedit(ui, &mut self.total_asset);
+                add_textedit(ui, &mut self.total_asset);
                 ui.add_space(SPACE);
 
+                ui.label("◇asset in casino");
+                add_textedit(ui, &mut self.current_asset);
+                ui.add_space(SPACE);
+                self.diff_between_current_asset = self.total_asset - self.current_asset;
+
+                let mut add_textedit = |ui: &mut Ui, num| {
+                    Self::add_numonly_textedit(ui, num, input_flag, 140.0);
+                };
                 ui.label("◇minimum bet");
-                add_num_textedit(ui, &mut self.min_bet);
+                add_textedit(ui, &mut self.min_bet);
                 ui.add_space(SPACE);
 
                 ui.label("◇Maximum bet");
-                add_num_textedit(ui, &mut self.max_bet);
+                add_textedit(ui, &mut self.max_bet);
                 ui.add_space(SPACE);
 
                 ui.label("◇bet step");
-                add_num_textedit(ui, &mut self.bet_step);
+                add_textedit(ui, &mut self.bet_step);
                 ui.add_space(SPACE);
 
                 ui.label("◇round-up threshold");
                 ui.add(Slider::new(&mut self.round_up, 0.05..=1.00).step_by(0.05));
             });
-        disable_key_input
+        if !(*self).eq(&temp){
+            self.save();
+        }
+    }
+    pub fn add_numonly_textedit<T: ToString + FromStr + Default>(
+        ui: &mut Ui,
+        num: &mut T,
+        key_input_flag: &mut bool,
+        width: f32,
+    ) {
+        let mut text = num.to_string();
+        let resp = ui.add(TextEdit::singleline(&mut text).desired_width(width));
+        if resp.changed() {
+            if text.is_empty() {
+                *num = Default::default();
+            } else if let Ok(o) = text.parse() {
+                *num = o;
+            }
+        }
+        if resp.has_focus() {
+            *key_input_flag = true;
+        }
     }
 }
 

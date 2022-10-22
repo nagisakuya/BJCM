@@ -103,6 +103,8 @@ impl AppMain {
 }
 impl eframe::App for AppMain {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let mut disable_key_input_flag = false;
+        let mut betsize = 0;
         TopBottomPanel::top("menu")
             .resizable(false)
             .show(ctx, |ui| {
@@ -173,8 +175,9 @@ impl eframe::App for AppMain {
                     .show_inside(ui, |ui| {
                         ui.vertical_centered(|ui| {
                             self.total_ev_handler.draw_contents(ui, &self.table_state);
-                            self.asset_manager
-                                .show_bet_text(ui, self.total_ev_handler.get_ev());
+                            betsize = self.asset_manager
+                                .draw_compornents(ui, self.total_ev_handler.get_ev(),&mut disable_key_input_flag);
+                            
                         });
                     });
                 self.table_state.show_deck(ui, &self.config);
@@ -220,14 +223,15 @@ impl eframe::App for AppMain {
             }
         }
         self.buy_window.show(ctx, &self.config, &mut self.activator);
-        let disable_key_input = self.asset_manager.show(ctx, &self.config);
+
+        self.asset_manager.show_window(ctx, &self.config,&mut disable_key_input_flag);
 
         self.total_ev_handler
             .update(&self.config, &self.table_state.deck);
 
-        if !disable_key_input {
+        if !disable_key_input_flag {
             self.table_state
-                .update(ctx, &self.config, &mut self.table_history);
+                .update(ctx, &self.config, &mut self.table_history,betsize,&mut self.asset_manager);
         }
     }
 }
