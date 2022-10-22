@@ -1,7 +1,7 @@
 pub use blackjack_lib::*;
 pub use eframe::egui::*;
 
-use std::collections::VecDeque;
+use std::collections::{VecDeque, BTreeMap};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -72,15 +72,26 @@ impl AppMain {
         //font
         {
             let mut fonts = FontDefinitions::default();
-            let mut font = FontData::from_static(include_bytes!("../fonts/NotoSansJP-Regular.otf"));
-            font.tweak.scale = 1.5;
-            fonts.font_data.insert("noto_sans".to_owned(), font);
-            fonts
+            let mut sans = FontData::from_static(include_bytes!("../fonts/NotoSansJP-Regular.otf"));
+            sans.tweak.scale = 1.5;
+            fonts.font_data.insert("noto_sans".to_string(), sans);
+
+            let times = FontData::from_static(include_bytes!("../fonts/times new roman.ttf"));
+            fonts.font_data.insert("times_new_roman".to_string(), times);
+
+            let priority = fonts
                 .families
                 .get_mut(&FontFamily::Proportional)
-                .unwrap()
-                .insert(0, "noto_sans".to_owned());
+                .unwrap();
+            priority.insert(0, "noto_sans".to_string());
+
+            let mut btree:BTreeMap<FontFamily, Vec<_>> = BTreeMap::new();
+            btree.insert(FontFamily::Name("times_new_roman".into()),vec!["times_new_roman".to_string()]);
+
+            fonts.families.append(&mut btree);
+
             cc.egui_ctx.set_fonts(fonts);
+
         }
 
         _self
@@ -156,7 +167,6 @@ impl eframe::App for AppMain {
             .resizable(false)
             .max_width(140.0)
             .show(ctx, |ui| {
-                self.table_state.show_deck(ui, &self.config);
                 TopBottomPanel::bottom("total_ev_handler")
                     .resizable(false)
                     .frame(Frame::default().outer_margin(style::Margin::same(0.0)))
@@ -167,6 +177,7 @@ impl eframe::App for AppMain {
                                 .show_bet_text(ui, self.total_ev_handler.get_ev());
                         });
                     });
+                self.table_state.show_deck(ui, &self.config);
             });
         CentralPanel::default().show(ctx, |ui| {
             self.table_state.draw_table(ui);
