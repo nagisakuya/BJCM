@@ -11,6 +11,17 @@ p{
     margin-bottom:25px;
 }
 
+img{
+    display: block;
+    width: 80%;
+    margin:auto;
+}
+
+.big_red{
+    color: crimson;
+    font-size: x-large;
+}
+
 .center{
     width:fit-content;
     margin:auto;

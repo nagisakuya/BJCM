@@ -65,7 +65,6 @@ impl AppMain {
         };
 
         _self.total_ev_handler.setup(cc);
-        _self.table_state.setup(cc);
 
         cc.egui_ctx.set_visuals(egui::Visuals::dark());
 

@@ -20,7 +20,6 @@ pub struct TableState {
     stepper: Stepper,
     selected: Selected,
     betsize: Option<u32>,
-    card_texture: [Option<TextureHandle>; 10],
 }
 impl TableState {
     pub fn new(config: &Config) -> Self {
@@ -31,19 +30,11 @@ impl TableState {
             dealer: Dealer::new(),
             selected: Selected::Player(0),
             betsize: None,
-            card_texture: Default::default(),
             stepper: Default::default(),
         }
     }
 }
 impl TableState {
-    pub fn setup(&mut self, cc: &eframe::CreationContext<'_>) {
-        for i in 0..10 {
-            let path = &format!("{}/{}.png", IMAGE_FOLDER_PATH, i + 1);
-            let image = load_image_from_path(path).unwrap();
-            self.card_texture[i] = Some(cc.egui_ctx.load_texture(&format!("card_{}", i), image));
-        }
-    }
 
     pub fn update(
         &mut self,
@@ -177,7 +168,7 @@ impl TableState {
 
     fn update_hand_ev(&mut self, rule: &Rule) {
         for phand in self.players.iter_mut() {
-            if self.dealer.len() == 1 && phand.len() >= 2 {
+            if self.dealer.len() == 1 && phand.len() >= 2 && phand.is_player {
                 let phand_str =
                     io_util::bytes_to_string(&bincode::serialize(&phand.as_phand()).unwrap());
                 let dealer = io_util::bytes_to_string(&bincode::serialize(&self.dealer).unwrap());
