@@ -25,10 +25,12 @@ pub struct Config {
 impl Config{
     pub fn load() -> Self{
         if let Ok(bin) = std::fs::read(SETTING_FILE_PATH) {
-            bincode::deserialize(&bin).unwrap()
-        }else{
-            Default::default()
+            if let Ok(o) = bincode::deserialize(&bin){
+                return o;
+            }
         }
+        
+        Default::default()
     }
     pub fn save(& self){
         let mut file = std::fs::File::create(SETTING_FILE_PATH).unwrap();

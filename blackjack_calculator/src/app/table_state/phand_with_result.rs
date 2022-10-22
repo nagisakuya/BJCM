@@ -68,6 +68,11 @@ impl std::ops::Deref for PhandWithResult{
         &self.phand
     }
 }
+impl std::ops::DerefMut for PhandWithResult{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.phand
+    }
+}
 impl PhandTrait for PhandWithResult{
     fn as_mut_phand(&mut self) ->&mut Phand {
         self.phand.as_mut_phand()

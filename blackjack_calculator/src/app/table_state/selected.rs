@@ -4,7 +4,6 @@ use super::*;
 pub enum Selected {
     Player(usize),
     Dealer,
-    Discard,
 }
 impl Selected {
     pub fn is_player(&self, i: usize) -> bool {
@@ -71,7 +70,7 @@ impl Stepper {
 impl TableState {
     fn stepper_move(&mut self) {
         self.stepper.current += 1;
-        self.selected_base = self.stepper.get_entry_current(self.players.len());
+        self.selected = self.stepper.get_entry_current(self.players.len());
     }
     pub fn step(&mut self) {
         if let Some(o) = self.stepper.get() {
@@ -86,7 +85,7 @@ impl TableState {
             match o {
                 DealToDealer | DealerPlays => self.stepper_move(),
                 _DealToPlayerFromLeft | _PlayerPlaysFromLeft => {
-                    if let Selected::Player(ref mut i) = self.selected_base {
+                    if let Selected::Player(ref mut i) = self.selected {
                         *i += 1;
                         if *i == self.players.len() {
                             self.stepper_move()
@@ -94,7 +93,7 @@ impl TableState {
                     }
                 }
                 DealToPlayerFromRight | PlayerPlaysFromRight => {
-                    if let Selected::Player(ref mut i) = self.selected_base {
+                    if let Selected::Player(ref mut i) = self.selected {
                         if *i == 0 {
                             self.stepper_move()
                         } else {
