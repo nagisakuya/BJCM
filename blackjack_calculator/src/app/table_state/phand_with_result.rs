@@ -1,4 +1,6 @@
 use std::thread::JoinHandle;
+use blackjack_lib::phand_for_play::PhandForPlay;
+
 use super::*;
 
 pub(super) enum CalculationResult<T> {
@@ -48,6 +50,9 @@ impl PhandWithResult{
             is_player
         }
     }
+    pub fn get_phand(&self) -> &Phand{
+        &self.phand
+    }
     pub fn _clear(&mut self){
         self.phand = PhandForPlay::new();
     }
@@ -71,13 +76,5 @@ impl std::ops::Deref for PhandWithResult{
 impl std::ops::DerefMut for PhandWithResult{
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.phand
-    }
-}
-impl PhandTrait for PhandWithResult{
-    fn as_mut_phand(&mut self) ->&mut Phand {
-        self.phand.as_mut_phand()
-    }
-    fn as_phand(&self) ->&Phand {
-        self.phand.as_phand()
     }
 }

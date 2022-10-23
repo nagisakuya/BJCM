@@ -170,7 +170,7 @@ impl TableState {
         for phand in self.players.iter_mut() {
             if self.dealer.len() == 1 && phand.len() >= 2 && phand.is_player {
                 let phand_str =
-                    io_util::bytes_to_string(&bincode::serialize(&phand.as_phand()).unwrap());
+                    io_util::bytes_to_string(&bincode::serialize(&phand.get_phand()).unwrap());
                 let dealer = io_util::bytes_to_string(&bincode::serialize(&self.dealer).unwrap());
                 let deck = io_util::bytes_to_string(&bincode::serialize(&self.deck).unwrap());
                 let rule = io_util::bytes_to_string(&bincode::serialize(&rule).unwrap());
