@@ -4,7 +4,7 @@ use super::*;
 
 
 pub struct Activator {
-    code: Option<u64>,
+    code: Option<String>,
     pub activated:bool,
 }
 impl Activator {
@@ -20,7 +20,7 @@ impl Activator {
         _self
     }
     pub fn check_activated(&mut self) -> bool{
-        let temp = self.code.is_some() && Self::get_hash() == self.code.unwrap();
+        let temp = self.code.is_some() && &Self::get_hash() == self.code.as_ref().unwrap();
         self.activated = temp;
         temp
     }
@@ -39,7 +39,7 @@ impl Activator {
                 Ok(o) => o,
                 Err(_) => return Err("Failed to save activation code.".to_string()),
             };
-            match write!(file,"{:?}",self.code.unwrap()){  
+            match write!(file,"{}",self.code.as_ref().unwrap()){  
                 Ok(o) => o,
                 Err(_) => return Err("Failed to save activation code!".to_string()),
             };
@@ -48,21 +48,18 @@ impl Activator {
         }
         Ok(())
     }
-    fn load_code() -> Result<u64,()>{
+    fn load_code() -> Result<String,()>{
         let mut file = match std::fs::File::open(ACTIVATION_CODE_PATH){
             Ok(x) => x,
             Err(_) => return Err(()),
         };
         let mut string = String::new();
         file.read_to_string(&mut string).unwrap();
-        match string.parse(){
-            Ok(x) => Ok(x),
-            Err(_) => Err(()),
-        }
+        return Ok(string);
     }
-    fn get_hash() -> u64{
+    fn get_hash() -> String{
         let temp = Activator::get_pcid();
-        code_gen_lib::generate_hash(temp)
+        code_gen_lib::generate_hash(&temp)
     }
     pub fn get_pcid() -> String {
         let process = std::process::Command::new("reg",)

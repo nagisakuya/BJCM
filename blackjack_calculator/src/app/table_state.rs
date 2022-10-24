@@ -128,7 +128,9 @@ impl TableState {
         }
         self.dealer = Dealer::new();
         self.players = self.base_players.clone();
-        self.selected = self.stepper.reset(self.players.len());
+        if let Some(x) = self.stepper.reset(self.players.len()){
+            self.selected = x;
+        }
 
         profit
     }

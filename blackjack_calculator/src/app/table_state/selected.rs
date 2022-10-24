@@ -51,18 +51,22 @@ impl Stepper {
     fn get(&self) -> Option<&StepperElements> {
         self.vec.get(self.current)
     }
-    pub fn reset(&mut self, players: usize) -> Selected {
+    pub fn reset(&mut self, players: usize) -> Option<Selected> {
         self.current = 0;
         self.get_entry_current(players)
     }
-    fn get_entry(&self, players: usize, index: usize) -> Selected {
-        match self.vec.get(index).unwrap() {
-            DealToDealer | DealerPlays => Selected::Dealer,
-            DealToPlayerFromRight | PlayerPlaysFromRight => Selected::Player(players - 1),
-            _DealToPlayerFromLeft | _PlayerPlaysFromLeft => Selected::Player(0),
+    fn get_entry(&self, players: usize, index: usize) -> Option<Selected> {
+        if let Some(x) = self.vec.get(index){
+            match x {
+                DealToDealer | DealerPlays => Some(Selected::Dealer),
+                DealToPlayerFromRight | PlayerPlaysFromRight => Some(Selected::Player(players - 1)),
+                _DealToPlayerFromLeft | _PlayerPlaysFromLeft => Some(Selected::Player(0)),
+            }
+        }else{
+            None
         }
     }
-    fn get_entry_current(&self, players: usize) -> Selected {
+    fn get_entry_current(&self, players: usize) -> Option<Selected> {
         self.get_entry(players, self.current)
     }
 }
@@ -70,7 +74,9 @@ impl Stepper {
 impl TableState {
     fn stepper_move(&mut self) {
         self.stepper.current += 1;
-        self.selected = self.stepper.get_entry_current(self.players.len());
+        if let Some(x) = self.stepper.get_entry_current(self.players.len()){
+            self.selected = x;
+        }
     }
     pub fn step(&mut self) {
         if let Some(o) = self.stepper.get() {
