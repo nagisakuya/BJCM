@@ -47,7 +47,7 @@ impl AssetManager {
             Default::default()
         }
     }
-    pub fn draw_compornents(&mut self, ui: &mut Ui, ev: Option<f32>, input_flag: &mut bool) -> u32 {
+    pub fn draw_compornents(&mut self, ui: &mut Ui, ev: Option<f32>, input_flag: &mut bool,config:&Config) -> u32 {
         let betsize = if let Some(ev) = ev {
             self.calc_betsize(ev)
         } else {
@@ -59,7 +59,7 @@ impl AssetManager {
         ui.label(RichText::new(text).size(20.0));
 
         ui.horizontal(|ui|{
-            ui.label("asset:");
+            ui.label(config.get_text(TextKey::Balance).to_owned() + ":");
             Self::add_numonly_textedit(ui, &mut self.current_asset, input_flag, 100.0);
             let temp = self.current_asset + self.diff_between_current_asset;
             if self.total_asset != temp{
@@ -99,11 +99,11 @@ impl AssetManager {
                     Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
                 const SPACE: f32 = 3.0;
-                ui.label("◇asset");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowAsset));
                 add_textedit(ui, &mut self.total_asset);
                 ui.add_space(SPACE);
 
-                ui.label("◇asset in casino");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowAssetInCasino));
                 add_textedit(ui, &mut self.current_asset);
                 ui.add_space(SPACE);
                 self.diff_between_current_asset = self.total_asset - self.current_asset;
@@ -111,19 +111,19 @@ impl AssetManager {
                 let mut add_textedit = |ui: &mut Ui, num| {
                     Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
-                ui.label("◇minimum bet");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowMinBet));
                 add_textedit(ui, &mut self.min_bet);
                 ui.add_space(SPACE);
 
-                ui.label("◇Maximum bet");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowMaxBet));
                 add_textedit(ui, &mut self.max_bet);
                 ui.add_space(SPACE);
 
-                ui.label("◇bet step");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowBetStep));
                 add_textedit(ui, &mut self.bet_step);
                 ui.add_space(SPACE);
 
-                ui.label("◇round-up threshold");
+                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowThreshold));
                 ui.add(Slider::new(&mut self.round_up, 0.05..=1.00).step_by(0.05));
             });
         if !(*self).eq(&temp){

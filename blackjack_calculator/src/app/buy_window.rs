@@ -16,6 +16,7 @@ impl BuyWindow {
         }
     }
     pub fn show(&mut self, ctx: &Context,config:&Config,activator:&mut Activator) {
+        let mut close_flag = false;
         Window::new(config.get_text(TextKey::BuyWindowName)).open(&mut self.opened)
         .show(ctx, |ui|{
             ui.label(RichText::new(config.get_text(TextKey::BuyWindowH1)).heading().color(Color32::from_gray(230)));
@@ -30,9 +31,9 @@ impl BuyWindow {
             ui.add_space(20.0);
             ui.label(config.get_text(TextKey::BuyWindowActivationFormDescription));
             ui.add(TextEdit::singleline(&mut self.activation_code));
-            if ui.button("activate").clicked(){
+            if ui.button(config.get_text(TextKey::ActivationButton)).clicked(){
                 match activator.activate(&self.activation_code) {
-                    Ok(_) => {self.activation_text = Some(String::from("Activation success"))},
+                    Ok(_) => {close_flag = true},
                     Err(e) => {self.activation_text = Some(e);},
                 }
             }
@@ -40,5 +41,6 @@ impl BuyWindow {
                 ui.label(o);
             }
         });
+        if close_flag{self.opened = false}
     }
 }

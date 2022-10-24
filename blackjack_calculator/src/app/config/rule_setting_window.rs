@@ -54,10 +54,10 @@ impl RuleSettingWindow{
                 ui.label(RichText::new(config.get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
-                if ui.button("cancel").clicked(){
+                if ui.button(config.get_text(TextKey::Cancel)).clicked(){
                     result.0 = true;
                 }
-                if self.is_activated && ui.button("apply").clicked(){
+                if self.is_activated && ui.button(config.get_text(TextKey::Apply)).clicked(){
                     result.0 = true;
                     result.1 = Some(self.to_rule());
                 }

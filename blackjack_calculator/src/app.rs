@@ -175,7 +175,7 @@ impl eframe::App for AppMain {
                         ui.vertical_centered(|ui| {
                             self.total_ev_handler.draw_contents(ui, &self.table_state);
                             betsize = self.asset_manager
-                                .draw_compornents(ui, self.total_ev_handler.get_ev(),&mut disable_key_input_flag);
+                                .draw_compornents(ui, self.total_ev_handler.get_ev(),&mut disable_key_input_flag,&self.config);
                             
                         });
                     });

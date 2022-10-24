@@ -5,24 +5,24 @@ impl TableState{
         const GRIFFIN_ULTIMATE: [f64; 10] =
             [-60.0, 37.0, 45.0, 52.0, 70.0, 46.0, 27.0, 0.0, -17.0, -50.0];
         const GRIFFIN_ULTIMATE_MULTIPLER: f64 = 0.008;
-        const DEFAULT_RTP: f64 = -0.554;
-        let mut count = 0.0;
+        const _DEFAULT_RTP: f64 = -0.554;
+        let mut _count = 0.0;
         for i in 0..10 {
             ui.label(RichText::new(format!(
                 "{}={:>2}",
                 Card::new(i).unwrap(),
                 self.deck[i]
             )));
-            count += ((config.rule.NUMBER_OF_DECK * if i != 9 { 4 } else { 16 }) - self.deck[i])
+            _count += ((config.rule.NUMBER_OF_DECK * if i != 9 { 4 } else { 16 }) - self.deck[i])
                 as f64
                 * GRIFFIN_ULTIMATE[i];
         }
-        count = count * GRIFFIN_ULTIMATE_MULTIPLER / config.rule.NUMBER_OF_DECK as f64;
-        ui.label(RichText::new(format!(
+        _count = _count * GRIFFIN_ULTIMATE_MULTIPLER / config.rule.NUMBER_OF_DECK as f64;
+        /*ui.label(RichText::new(format!(
             "{}={:4>+1.3}%",
             config.get_text(TextKey::EstimatedRTPLabel),
             (count + DEFAULT_RTP)
-        )));
+        )));*/
     }
 
     pub fn draw_table(&mut self, ui: &mut Ui) {

@@ -26,12 +26,12 @@ impl GeneralSettingWindow {
         }
     }
     pub fn show(&mut self, ctx: &Context, config: &Config) -> (bool, Option<GeneralSetting>) {
-        let result = (false, None);
+        let mut result = (false, None);
         Window::new(config.get_text(TextKey::GeneralSettingWindowName))
             .auto_sized()
             .collapsible(false)
             .show(ctx, |ui| {
-                ui.label(config.get_text(TextKey::GeneralSettingLanguage));
+                ui.label("◇".to_owned() + config.get_text(TextKey::GeneralSettingLanguage));
                 egui::ComboBox::from_label("")
                     .selected_text(format!("{:?}", self.general.language))
                     .show_ui(ui, |ui| {
@@ -43,6 +43,16 @@ impl GeneralSettingWindow {
                             );
                         }
                     });
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    if ui.button("cancel").clicked() {
+                        result.0 = true;
+                    }
+                    if ui.button("apply").clicked() {
+                        result.0 = true;
+                        result.1 = Some(self.general.clone());
+                    }
+                });
             });
         result
     }

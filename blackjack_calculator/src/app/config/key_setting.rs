@@ -96,14 +96,15 @@ impl KeySettingWindow{
                 generate_combobox!("9",ui,self.keys.card[8]);
                 generate_combobox!("Ten",ui,self.keys.card[9]);
             });
+            ui.add_space(10.0);
             if !self.is_activated{
                 ui.label(RichText::new(config.get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
-                if ui.button("cancel").clicked(){
+                if ui.button(config.get_text(TextKey::Cancel)).clicked(){
                     result.0 = true;
                 }
-                if ui.button("apply").clicked(){
+                if ui.button(config.get_text(TextKey::Apply)).clicked(){
                     result.0 = true;
                     result.1 = Some(self.keys.clone());
                 }
