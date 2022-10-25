@@ -43,6 +43,7 @@ impl TableState {
         history: &mut VecDeque<TableState>,
         betsize: u32,
         asset: &mut AssetManager,
+        total_ev_handler: &mut TotalEvHandler,
     ) {
         const HISTORY_LIMIT: usize = 100;
         self.check_join_result();
@@ -75,6 +76,22 @@ impl TableState {
                 self.step();
             }
         }
+        if ctx.input().key_pressed(config.kyes.remove) {
+            updated = true;
+            match self.selected {
+                Selected::Player(pos) => {
+                    let player = self.players.get_mut(pos).unwrap();
+                    if let Some(o) = player.pop() {
+                        self.deck.add(o);
+                    }
+                }
+                Selected::Dealer => {
+                    if let Some(o) = self.dealer.pop() {
+                        self.deck.add(o);
+                    }
+                }
+            }
+        }
         if ctx.input().key_pressed(config.kyes.next) {
             updated = true;
             asset.add_current(self.next());
@@ -82,20 +99,23 @@ impl TableState {
         if ctx.input().key_pressed(config.kyes.reset) {
             updated = true;
             asset.add_current(self.reset(&config));
+            total_ev_handler.reset();
         }
         if ctx.input().key_pressed(config.kyes.step) {
             self.step_force();
         }
         if ctx.input().key_pressed(config.kyes.split) {
-            if let Selected::Player(pos) = self.selected {
-                let hand = self.players.get_mut(pos).unwrap();
+            if let Selected::Player(ref mut pos) = self.selected {
+                let hand = self.players.get_mut(*pos).unwrap();
                 if hand.is_twin() {
                     let temp = hand.divide();
-                    self.players.insert(pos + 1, temp);
+                    self.players.insert(*pos + 1, temp);
+                    *pos += 1;
                     updated = true;
                 }
             }
         };
+        self.update_selected(ctx, config,&mut updated);
         if updated {
             history.push_back(previous);
             if history.len() > HISTORY_LIMIT {
@@ -109,7 +129,7 @@ impl TableState {
             }
             self.update_hand_ev(&config.rule);
         }
-        self.update_selected(ctx, config);
+        
     }
 
     pub fn reset(&mut self, config: &Config) -> i32 {
@@ -135,7 +155,7 @@ impl TableState {
         profit
     }
 
-    fn update_selected(&mut self, ctx: &Context, config: &Config) {
+    fn update_selected(&mut self, ctx: &Context, config: &Config ,updated:&mut bool) {
         if ctx.input().key_pressed(config.kyes.right) {
             match self.selected {
                 Selected::Player(pos) => {
@@ -144,6 +164,7 @@ impl TableState {
                     } else {
                         self.selected = Selected::Player(pos + 1);
                     }
+                    *updated = true;
                 }
                 Selected::Dealer => (),
             }
@@ -156,15 +177,19 @@ impl TableState {
                     } else {
                         self.selected = Selected::Player(pos - 1);
                     }
+                    *updated = true;
                 }
                 Selected::Dealer => (),
             }
         };
         if ctx.input().key_pressed(config.kyes.up) || ctx.input().key_pressed(config.kyes.down) {
             match self.selected {
-                Selected::Player(_) => self.selected = Selected::Dealer,
+                Selected::Player(_) => {
+                    self.selected = Selected::Dealer
+                },
                 Selected::Dealer => self.selected = Selected::Player(self.players.len() / 2),
             }
+            *updated = true;
         };
     }
 

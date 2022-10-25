@@ -86,6 +86,7 @@ impl AppMain {
 
             let mut btree:BTreeMap<FontFamily, Vec<_>> = BTreeMap::new();
             btree.insert(FontFamily::Name("times_new_roman".into()),vec!["times_new_roman".to_string()]);
+            btree.insert(FontFamily::Name("noto_sans".into()),vec!["noto_sans".to_string()]);
 
             fonts.families.append(&mut btree);
 
@@ -182,7 +183,7 @@ impl eframe::App for AppMain {
                 self.table_state.show_deck(ui, &self.config);
             });
         CentralPanel::default().show(ctx, |ui| {
-            self.table_state.draw_table(ui);
+            self.table_state.draw_table(ui,&self.config);
         });
         if let Some(ref mut o) = self.rule_setting_window {
             let result = o.show(ctx, &self.config);
@@ -193,7 +194,7 @@ impl eframe::App for AppMain {
                         self.config.rule = o;
                         self.config.save();
                         self.total_ev_handler.reset();
-                        self.table_state.reset(&self.config);
+                        //self.table_state.reset(&self.config);
                         self.table_history = Default::default();
                     }
                 }
@@ -230,7 +231,7 @@ impl eframe::App for AppMain {
 
         if !disable_key_input_flag {
             self.table_state
-                .update(ctx, &self.config, &mut self.table_history,betsize,&mut self.asset_manager);
+                .update(ctx, &self.config, &mut self.table_history,betsize,&mut self.asset_manager,&mut self.total_ev_handler);
         }
     }
 }

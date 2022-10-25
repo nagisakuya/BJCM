@@ -48,7 +48,12 @@ impl RuleSettingWindow{
             ui.add(Checkbox::new(&mut self.rule.BJ_AFTER_SPLIT, "blackjack after split"));
             ui.add(Checkbox::new(&mut self.rule.RE_SPLIT, "resplit"));
             ui.add(Checkbox::new(&mut self.rule.ACTION_AFTER_SPLITTING_ACE, "splitting ace stands"));
-            ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_ACE, "dealer peeks when Ace"));
+            ui.add(Checkbox::new(&mut self.rule.INSUALANCE, "Insualance"));
+            if self.rule.INSUALANCE{
+                self.rule.DEALER_PEEKS_ACE = true;
+            }else{
+                ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_ACE, "dealer peeks when Ace"));
+            }
             ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_TEN, "dealer peeks when Ten"));
             if !self.is_activated{
                 ui.label(RichText::new(config.get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));

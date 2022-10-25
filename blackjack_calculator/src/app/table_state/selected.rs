@@ -15,7 +15,7 @@ impl Selected {
 }
 
 #[derive(Clone)]
-enum StepperElements {
+pub enum StepperElements {
     DealToDealer,
     _DealToPlayerFromLeft,
     DealToPlayerFromRight,
@@ -48,7 +48,7 @@ impl Default for Stepper {
 }
 
 impl Stepper {
-    fn get(&self) -> Option<&StepperElements> {
+    pub fn get(&self) -> Option<&StepperElements> {
         self.vec.get(self.current)
     }
     pub fn reset(&mut self, players: usize) -> Option<Selected> {

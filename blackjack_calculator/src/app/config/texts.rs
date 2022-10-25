@@ -58,9 +58,8 @@ create_text_and_enum!(TextKey,load_texts,
     (AssetWindowBetStep,["bet step","ベッド単位"]),
     (AssetWindowThreshold,["round-up threshold","切り上げ閾値"]),
     (Balance,["balance","残高"]),
-    (EstimatedRTPLabel,["est. RTP","概算RTP"]),
+    (EstimatedRTPLabel,["TC","TC"]),
     (ActivationButton,["activate","activate"]),
-    
 );
 
     

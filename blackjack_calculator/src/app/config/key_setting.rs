@@ -14,6 +14,7 @@ pub struct Keys{
     pub right:Key,
     pub left:Key,
     pub step: Key,
+    pub remove: Key,
 }
 
 impl Default for Keys{
@@ -40,6 +41,7 @@ impl Default for Keys{
             right:Key::ArrowRight,
             left:Key::ArrowLeft,
             step:Key::Space,
+            remove:Key::Backspace
         }
     }
 }
@@ -83,6 +85,7 @@ impl KeySettingWindow{
                 generate_combobox!("Split",ui,self.keys.split);
                 generate_combobox!("Step",ui,self.keys.step);
                 generate_combobox!("Next",ui,self.keys.next);
+                generate_combobox!("Remove",ui,self.keys.remove);
                 generate_combobox!("Undo",ui,self.keys.undo);
                 generate_combobox!("Reset",ui,self.keys.reset);
                 generate_combobox!("Ace",ui,self.keys.card[0]);
