@@ -1,5 +1,5 @@
-use std::{io::Write, collections::HashMap};
 use once_cell::sync::Lazy;
+use std::{collections::HashMap, io::Write};
 
 use super::*;
 
@@ -15,46 +15,42 @@ pub use general_setting::*;
 pub mod texts;
 pub use texts::*;
 
-
-#[derive(Default,serde::Serialize,serde::Deserialize)]
+#[derive(Default,serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub rule: Rule,
     pub kyes: Keys,
     pub general: GeneralSetting,
 }
-impl Config{
-    pub fn load() -> Self{
+impl Config {
+    pub fn load() -> Self {
         if let Ok(bin) = std::fs::read(SETTING_FILE_PATH) {
-            if let Ok(o) = bincode::deserialize(&bin){
+            if let Ok(o) = bincode::deserialize(&bin) {
                 return o;
             }
         }
-        
+
         Default::default()
     }
-    pub fn save(& self){
+    pub fn save(&self) {
         let mut file = std::fs::File::create(SETTING_FILE_PATH).unwrap();
         file.write_all(&bincode::serialize(self).unwrap()).unwrap();
     }
-    const TEXTS:Lazy<HashMap<TextKey,Vec<&'static str>>> = Lazy::new(||{
-        load_texts()
-    });
-    pub fn get_text(&self,key:TextKey) -> &'static str{
-        if let Some(o) = Self::TEXTS.get(&key){
-            if let Some(i) = o.get(self.general.language as usize){
-                return i
+    const TEXTS: Lazy<HashMap<TextKey, Vec<&'static str>>> = Lazy::new(|| load_texts());
+    pub fn get_text(&self, key: TextKey) -> &'static str {
+        if let Some(o) = Self::TEXTS.get(&key) {
+            if let Some(i) = o.get(self.general.language as usize) {
+                return i;
             }
         }
         "text_not_found"
     }
 }
 
-
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
     #[test]
-    fn lang_test(){
+    fn lang_test() {
         let mut config = Config::default();
         config.general.language = Language::Japanese;
         let text = config.get_text(TextKey::BuyWindowName);

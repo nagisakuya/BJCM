@@ -5,11 +5,15 @@ use strum_macros::EnumIter;
 #[derive(PartialEq, Eq, Hash, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GeneralSetting {
     pub language: Language,
+    pub infinite: bool,
+    pub rotate_num: bool,
 }
 impl Default for GeneralSetting {
     fn default() -> Self {
         GeneralSetting {
             language: Language::Japanese,
+            infinite: false,
+            rotate_num: true,
         }
     }
 }
@@ -43,7 +47,10 @@ impl GeneralSettingWindow {
                             );
                         }
                     });
+
                 ui.add_space(10.0);
+                ui.add(Checkbox::new(&mut self.general.infinite, config.get_text(TextKey::GeneralSettingDiscard)));
+                ui.add(Checkbox::new(&mut self.general.rotate_num, config.get_text(TextKey::GeneralSettingRotateNum)));
                 ui.horizontal(|ui| {
                     if ui.button("cancel").clicked() {
                         result.0 = true;

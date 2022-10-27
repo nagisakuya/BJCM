@@ -1,5 +1,6 @@
 use super::*;
 
+
 pub struct RuleSettingWindow{
     rule:Rule,
     charlie_enable:bool,
@@ -11,7 +12,7 @@ impl RuleSettingWindow{
     pub fn new(rule:&Rule,activated:bool) -> Self{
         let charlie = if let Some(t) = rule.CHARLIE{
             t
-        }else {5};
+        }else {6};
         RuleSettingWindow{
             rule:rule.clone(),
             charlie_enable:rule.CHARLIE.is_some(),
@@ -39,7 +40,9 @@ impl RuleSettingWindow{
             ui.label("◇Blackjack odds");
             ui.add(Slider::new(&mut self.bj_odd,2.00..=3.00).step_by(0.05));
             ui.add(Checkbox::new(&mut self.rule.LATE_SURRENDER, "Surrender"));
-            ui.add(Checkbox::new(&mut self.rule.DEALER_SOFT_17_STAND, "dealer soft 17 stands"));
+            let mut temp = !self.rule.DEALER_SOFT_17_STAND;
+            ui.add(Checkbox::new(&mut temp, "dealer soft 17 hits"));
+            self.rule.DEALER_SOFT_17_STAND = !temp;
             ui.add(Checkbox::new(&mut self.charlie_enable, "Charlie"));
             if self.charlie_enable{
                 ui.add(Slider::new(&mut self.charlie,4..=9));

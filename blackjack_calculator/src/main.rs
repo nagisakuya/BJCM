@@ -9,7 +9,7 @@ fn main() {
     let mut native_options = eframe::NativeOptions::default();
     native_options.min_window_size = Some(egui::emath::Vec2 { x: 500.0, y: 400.0 });
     eframe::run_native(
-        "blackjack calculator",
+        "Blackjack Counting Master",
         native_options,
         Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc))),
     );

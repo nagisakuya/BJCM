@@ -19,6 +19,7 @@ pub struct TableState {
     dealer: Dealer,
     stepper: Stepper,
     selected: Selected,
+    discard: Vec<Card>,
     betsize: Option<u32>,
 }
 impl TableState {
@@ -31,11 +32,11 @@ impl TableState {
             selected: Selected::Player(0),
             betsize: None,
             stepper: Default::default(),
+            discard: Vec::new(),
         }
     }
 }
 impl TableState {
-
     pub fn update(
         &mut self,
         ctx: &Context,
@@ -61,19 +62,23 @@ impl TableState {
                 match self.selected {
                     Selected::Player(pos) => {
                         let player = self.players.get_mut(pos).unwrap();
-                        if let CalculationResult::Result(Some(Action::Double)) = player.result{
+                        if let CalculationResult::Result(Some(Action::Double)) = player.result {
                             player.doubled = true;
                         }
                         player.push(Card::new(i).unwrap());
-                        
+
                         self.deck.draw(i);
                     }
                     Selected::Dealer => {
                         self.dealer.push(Card::new(i).unwrap());
                         self.deck.draw(i);
                     }
+                    Selected::Discard => {
+                        self.discard.push(Card::new(i).unwrap());
+                        self.deck.draw(i);
+                    }
                 }
-                self.step();
+                self.step(config);
             }
         }
         if ctx.input().key_pressed(config.kyes.remove) {
@@ -90,6 +95,11 @@ impl TableState {
                         self.deck.add(o);
                     }
                 }
+                Selected::Discard => {
+                    if let Some(o) = self.discard.pop() {
+                        self.deck.add(o);
+                    }
+                }
             }
         }
         if ctx.input().key_pressed(config.kyes.next) {
@@ -102,7 +112,7 @@ impl TableState {
             total_ev_handler.reset();
         }
         if ctx.input().key_pressed(config.kyes.step) {
-            self.step_force();
+            self.step_force(config);
         }
         if ctx.input().key_pressed(config.kyes.split) {
             if let Selected::Player(ref mut pos) = self.selected {
@@ -115,7 +125,7 @@ impl TableState {
                 }
             }
         };
-        self.update_selected(ctx, config,&mut updated);
+        self.update_selected(ctx, config, &mut updated);
         if updated {
             history.push_back(previous);
             if history.len() > HISTORY_LIMIT {
@@ -129,7 +139,6 @@ impl TableState {
             }
             self.update_hand_ev(&config.rule);
         }
-        
     }
 
     pub fn reset(&mut self, config: &Config) -> i32 {
@@ -148,14 +157,15 @@ impl TableState {
         }
         self.dealer = Dealer::new();
         self.players = self.base_players.clone();
-        if let Some(x) = self.stepper.reset(self.players.len()){
+        self.discard.clear();
+        if let Some(x) = self.stepper.reset(self.players.len()) {
             self.selected = x;
         }
 
         profit
     }
 
-    fn update_selected(&mut self, ctx: &Context, config: &Config ,updated:&mut bool) {
+    fn update_selected(&mut self, ctx: &Context, config: &Config, updated: &mut bool) {
         if ctx.input().key_pressed(config.kyes.right) {
             match self.selected {
                 Selected::Player(pos) => {
@@ -166,28 +176,42 @@ impl TableState {
                     }
                     *updated = true;
                 }
-                Selected::Dealer => (),
+                Selected::Dealer => {
+                    if config.general.infinite {
+                        self.selected = Selected::Discard
+                    }
+                }
+                Selected::Discard => self.selected = Selected::Dealer,
             }
         };
         if ctx.input().key_pressed(config.kyes.left) {
             match self.selected {
                 Selected::Player(pos) => {
                     if pos == 0 {
-                        self.selected = Selected::Player(self.players.len() - 1);
+                        if config.general.infinite {
+                            self.selected = Selected::Discard
+                        } else {
+                            self.selected = Selected::Player(self.players.len() - 1);
+                        }
                     } else {
                         self.selected = Selected::Player(pos - 1);
                     }
                     *updated = true;
                 }
-                Selected::Dealer => (),
+                Selected::Dealer => {
+                    if config.general.infinite {
+                        self.selected = Selected::Discard
+                    }
+                }
+                Selected::Discard => self.selected = Selected::Dealer,
             }
         };
         if ctx.input().key_pressed(config.kyes.up) || ctx.input().key_pressed(config.kyes.down) {
             match self.selected {
-                Selected::Player(_) => {
-                    self.selected = Selected::Dealer
-                },
-                Selected::Dealer => self.selected = Selected::Player(self.players.len() / 2),
+                Selected::Player(_) => self.selected = Selected::Dealer,
+                Selected::Dealer | Selected::Discard => {
+                    self.selected = Selected::Player(self.players.len() / 2)
+                }
             }
             *updated = true;
         };

@@ -195,7 +195,7 @@ impl eframe::App for AppMain {
                         self.config.save();
                         self.total_ev_handler.reset();
                         //self.table_state.reset(&self.config);
-                        self.table_history = Default::default();
+                        //self.table_history = Default::default();
                     }
                 }
             }
@@ -219,6 +219,9 @@ impl eframe::App for AppMain {
                 self.general_setting_window = None;
                 if let Some(o) = result.1 {
                     self.config.general = o;
+                    if self.activator.check_activated() {
+                        self.config.save();
+                    }
                 }
             }
         }
