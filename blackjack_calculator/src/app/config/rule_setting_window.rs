@@ -7,6 +7,7 @@ pub struct RuleSettingWindow{
     charlie:usize,
     bj_odd:f32,
     is_activated:bool,
+    opened:bool,
 }
 impl RuleSettingWindow{
     pub fn new(rule:&Rule,activated:bool) -> Self{
@@ -19,7 +20,23 @@ impl RuleSettingWindow{
             charlie,
             bj_odd:rule.BJ_PAYBACK + 1.0,
             is_activated:activated,
+            opened:false,
         }
+    }
+    pub fn switch(&mut self, config: &Config){
+        if self.opened{
+            self.try_close(config);
+        }else{
+            self.opened = true;
+        }
+    }
+    pub fn try_close(&mut self, config: &Config){
+        if config.rule == self.to_rule(){
+            self.close();
+        }
+    }
+    pub fn close(&mut self){
+        self.opened = false;
     }
     fn to_rule(&self) -> Rule{
         let mut rule = self.rule.clone();
@@ -31,6 +48,7 @@ impl RuleSettingWindow{
     }
     pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Rule>){
         let mut result = (false,None);
+        if !self.opened {return result}
         Window::new(config.get_text(TextKey::RuleSettingWindowName))
         .auto_sized()
         .collapsible(false)

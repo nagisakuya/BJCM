@@ -90,6 +90,7 @@ impl AssetManager {
     }
     pub fn show_window(&mut self, ctx: &Context, config: &Config, input_flag: &mut bool) {
         let temp = self.clone();
+        let mut close_flag = false;
         Window::new(config.get_text(TextKey::AssetWindowName))
             .auto_sized()
             .collapsible(false)
@@ -98,7 +99,7 @@ impl AssetManager {
                 let mut add_textedit = |ui: &mut Ui, num| {
                     Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
-                const SPACE: f32 = 3.0;
+                const SPACE: f32 = 5.0;
                 ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowAsset));
                 add_textedit(ui, &mut self.total_asset);
                 ui.add_space(SPACE);
@@ -125,9 +126,17 @@ impl AssetManager {
 
                 ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowThreshold));
                 ui.add(Slider::new(&mut self.round_up, 0.05..=1.00).step_by(0.05));
+
+                ui.add_space(10.0);
+                if ui.button(config.get_text(TextKey::Close)).clicked(){
+                    close_flag = true;
+                }
             });
         if !(*self).eq(&temp){
             self.save();
+        }
+        if close_flag{
+            self.opened = false;
         }
     }
     pub fn add_numonly_textedit<T: ToString + FromStr + Default>(

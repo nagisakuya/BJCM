@@ -1,7 +1,7 @@
 pub use blackjack_lib::*;
 pub use eframe::egui::*;
 
-use std::collections::{VecDeque, BTreeMap};
+use std::collections::{BTreeMap, VecDeque};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -36,9 +36,9 @@ pub struct AppMain {
     table_state: TableState,
     table_history: VecDeque<TableState>,
     total_ev_handler: TotalEvHandler,
-    rule_setting_window: Option<RuleSettingWindow>,
-    key_setting_window: Option<KeySettingWindow>,
-    general_setting_window: Option<GeneralSettingWindow>,
+    rule_setting_window: RuleSettingWindow,
+    key_setting_window: KeySettingWindow,
+    general_setting_window: GeneralSettingWindow,
     asset_manager: AssetManager,
     buy_window: BuyWindow,
 }
@@ -55,9 +55,9 @@ impl AppMain {
             table_state: TableState::new(&config),
             table_history: VecDeque::new(),
             total_ev_handler: Default::default(),
-            rule_setting_window: None,
-            key_setting_window: None,
-            general_setting_window: None,
+            rule_setting_window: RuleSettingWindow::new(&config.rule, activator.check_activated()),
+            key_setting_window: KeySettingWindow::new(&config.kyes, activator.check_activated()),
+            general_setting_window: GeneralSettingWindow::new(config.general.clone()),
             asset_manager: AssetManager::load(),
             buy_window: BuyWindow::new(),
             activator,
@@ -78,20 +78,22 @@ impl AppMain {
             let times = FontData::from_static(include_bytes!("../fonts/times new roman.ttf"));
             fonts.font_data.insert("times_new_roman".to_string(), times);
 
-            let priority = fonts
-                .families
-                .get_mut(&FontFamily::Proportional)
-                .unwrap();
+            let priority = fonts.families.get_mut(&FontFamily::Proportional).unwrap();
             priority.insert(0, "noto_sans".to_string());
 
-            let mut btree:BTreeMap<FontFamily, Vec<_>> = BTreeMap::new();
-            btree.insert(FontFamily::Name("times_new_roman".into()),vec!["times_new_roman".to_string()]);
-            btree.insert(FontFamily::Name("noto_sans".into()),vec!["noto_sans".to_string()]);
+            let mut btree: BTreeMap<FontFamily, Vec<_>> = BTreeMap::new();
+            btree.insert(
+                FontFamily::Name("times_new_roman".into()),
+                vec!["times_new_roman".to_string()],
+            );
+            btree.insert(
+                FontFamily::Name("noto_sans".into()),
+                vec!["noto_sans".to_string()],
+            );
 
             fonts.families.append(&mut btree);
 
             cc.egui_ctx.set_fonts(fonts);
-
         }
 
         _self
@@ -113,34 +115,19 @@ impl eframe::App for AppMain {
                         .button(self.config.get_text(TextKey::GeneralSettingButton))
                         .clicked()
                     {
-                        if self.general_setting_window.is_none() {
-                            self.general_setting_window = Some(GeneralSettingWindow::new(
-                                &self.config.general,
-                                self.activator.check_activated(),
-                            ));
-                        }
+                        self.general_setting_window.switch(&self.config);
                     }
                     if ui
                         .button(self.config.get_text(TextKey::RuleSettingWindowButton))
                         .clicked()
                     {
-                        if self.rule_setting_window.is_none() {
-                            self.rule_setting_window = Some(RuleSettingWindow::new(
-                                &self.config.rule,
-                                self.activator.check_activated(),
-                            ));
-                        }
+                        self.rule_setting_window.switch(&self.config);
                     }
                     if ui
                         .button(self.config.get_text(TextKey::KeySettingWindowButton))
                         .clicked()
                     {
-                        if self.key_setting_window.is_none() {
-                            self.key_setting_window = Some(KeySettingWindow::new(
-                                &self.config.kyes,
-                                self.activator.check_activated(),
-                            ));
-                        }
+                        self.key_setting_window.switch(&self.config);
                     }
                     if ui
                         .button(self.config.get_text(TextKey::HowToUseButton))
@@ -175,66 +162,70 @@ impl eframe::App for AppMain {
                     .show_inside(ui, |ui| {
                         ui.vertical_centered(|ui| {
                             self.total_ev_handler.draw_contents(ui, &self.table_state);
-                            betsize = self.asset_manager
-                                .draw_compornents(ui, self.total_ev_handler.get_ev(),&mut disable_key_input_flag,&self.config);
-                            
+                            betsize = self.asset_manager.draw_compornents(
+                                ui,
+                                self.total_ev_handler.get_ev(),
+                                &mut disable_key_input_flag,
+                                &self.config,
+                            );
                         });
                     });
                 self.table_state.show_deck(ui, &self.config);
             });
         CentralPanel::default().show(ctx, |ui| {
-            self.table_state.draw_table(ui,&self.config);
+            self.table_state.draw_table(ui, &self.config);
         });
-        if let Some(ref mut o) = self.rule_setting_window {
-            let result = o.show(ctx, &self.config);
-            if result.0 {
-                self.rule_setting_window = None;
-                if self.activator.check_activated() {
-                    if let Some(o) = result.1 {
-                        self.config.rule = o;
-                        self.config.save();
-                        self.total_ev_handler.reset();
-                        //self.table_state.reset(&self.config);
-                        //self.table_history = Default::default();
-                    }
+        let result = self.rule_setting_window.show(ctx, &self.config);
+        if result.0 {
+            self.rule_setting_window.close();
+            if self.activator.check_activated() {
+                if let Some(o) = result.1 {
+                    self.config.rule = o;
+                    self.config.save();
+                    self.total_ev_handler.reset();
+                    //self.table_state.reset(&self.config);
+                    //self.table_history = Default::default();
                 }
             }
         }
-        if let Some(ref mut o) = self.key_setting_window {
-            let result = o.show(ctx, &self.config);
-            if result.0 {
-                self.key_setting_window = None;
-                if let Some(o) = result.1 {
-                    self.config.kyes = o;
-                    if self.activator.check_activated() {
-                        self.config.save();
-                    }
+        let result = self.key_setting_window.show(ctx, &self.config);
+        if result.0 {
+            self.key_setting_window.close();
+            if let Some(o) = result.1 {
+                self.config.kyes = o;
+                if self.activator.check_activated() {
+                    self.config.save();
                 }
             }
         }
 
-        if let Some(ref mut o) = self.general_setting_window {
-            let result = o.show(ctx, &self.config);
-            if result.0 {
-                self.general_setting_window = None;
-                if let Some(o) = result.1 {
-                    self.config.general = o;
-                    if self.activator.check_activated() {
-                        self.config.save();
-                    }
+        let result = self.general_setting_window.show(ctx, &self.config);
+        if result.0 {
+            self.general_setting_window.close();
+            if let Some(o) = result.1 {
+                self.config.general = o;
+                if self.activator.check_activated() {
+                    self.config.save();
                 }
             }
         }
         self.buy_window.show(ctx, &self.config, &mut self.activator);
 
-        self.asset_manager.show_window(ctx, &self.config,&mut disable_key_input_flag);
+        self.asset_manager
+            .show_window(ctx, &self.config, &mut disable_key_input_flag);
 
         self.total_ev_handler
             .update(&self.config, &self.table_state.deck);
 
         if !disable_key_input_flag {
-            self.table_state
-                .update(ctx, &self.config, &mut self.table_history,betsize,&mut self.asset_manager,&mut self.total_ev_handler);
+            self.table_state.update(
+                ctx,
+                &self.config,
+                &mut self.table_history,
+                betsize,
+                &mut self.asset_manager,
+                &mut self.total_ev_handler,
+            );
         }
     }
 }

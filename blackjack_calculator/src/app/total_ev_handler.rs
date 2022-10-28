@@ -83,9 +83,9 @@ impl TotalEvHandler {
             self.progless_resiever = Some(progless_resiever);
             move || {
                 let mut buffer = Vec::new();
+                let process = &mut process.0.lock().unwrap();
                 loop {
                     let mut temp_buf = vec![0; 10000];
-                    let process = &mut process.0.lock().unwrap();
                     if let Ok(readed) = process.stdout.as_mut().unwrap().read(&mut temp_buf) {
                         for i in 0..readed {
                             buffer.push(temp_buf[i]);
@@ -114,8 +114,10 @@ impl TotalEvHandler {
         self.total_ev = prev_ev;
     }
     pub fn reset(&mut self){
-        if let Some(ref mut p) = self.process{
-            p.0.lock().unwrap().kill().unwrap();
+        if let Some(p) = self.process.take(){
+            thread::spawn(move||{
+                let _ = p.0.lock().unwrap().kill();
+            });
         }
         *self = TotalEvHandler{
             textures:self.textures.clone(),

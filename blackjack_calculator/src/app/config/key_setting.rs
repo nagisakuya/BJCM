@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use super::*;
 
 
-#[derive(Clone,serde::Serialize,serde::Deserialize)]
+#[derive(Clone,serde::Serialize,serde::Deserialize,PartialEq, Eq)]
 pub struct Keys{
     pub card: [Key; 10],
     pub undo: Key,
@@ -62,16 +62,34 @@ macro_rules! generate_combobox {
 pub struct KeySettingWindow{
     keys:Keys,
     is_activated:bool,
+    opened:bool,
 }
 impl KeySettingWindow{
     pub fn new(keys:&Keys,is_activated:bool) -> Self{
-        KeySettingWindow{
+        Self{
             keys:keys.clone(),
             is_activated,
+            opened:false,
         }
+    }
+    pub fn switch(&mut self, config: &Config){
+        if self.opened{
+            self.try_close(config);
+        }else{
+            self.opened = true;
+        }
+    }
+    pub fn try_close(&mut self, config: &Config){
+        if config.kyes == self.keys{
+            self.close();
+        }
+    }
+    pub fn close(&mut self){
+        self.opened = false;
     }
     pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Keys>){
         let mut result = (false,None);
+        if !self.opened {return result}
         Window::new(config.get_text(TextKey::KeySettingWindowName))
         .auto_sized()
         .collapsible(false)

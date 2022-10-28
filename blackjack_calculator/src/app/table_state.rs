@@ -50,6 +50,7 @@ impl TableState {
         self.check_join_result();
         let previous = self.clone();
         let mut updated = false;
+        let mut update_hand_ev = false;
         for i in 0..10 {
             if ctx.input().key_pressed(config.kyes.card[i]) {
                 if self.betsize == None {
@@ -59,6 +60,7 @@ impl TableState {
                     continue;
                 }
                 updated = true;
+                update_hand_ev = true;
                 match self.selected {
                     Selected::Player(pos) => {
                         let player = self.players.get_mut(pos).unwrap();
@@ -83,6 +85,7 @@ impl TableState {
         }
         if ctx.input().key_pressed(config.kyes.remove) {
             updated = true;
+            update_hand_ev = true;
             match self.selected {
                 Selected::Player(pos) => {
                     let player = self.players.get_mut(pos).unwrap();
@@ -112,6 +115,7 @@ impl TableState {
             total_ev_handler.reset();
         }
         if ctx.input().key_pressed(config.kyes.step) {
+            updated = true;
             self.step_force(config);
         }
         if ctx.input().key_pressed(config.kyes.split) {
@@ -122,6 +126,7 @@ impl TableState {
                     self.players.insert(*pos + 1, temp);
                     *pos += 1;
                     updated = true;
+                    update_hand_ev = true;
                 }
             }
         };
@@ -131,6 +136,9 @@ impl TableState {
             if history.len() > HISTORY_LIMIT {
                 history.pop_front();
             }
+            self.update_hand_ev(&config.rule);
+        }
+        if update_hand_ev{
             self.update_hand_ev(&config.rule);
         }
         if ctx.input().key_pressed(config.kyes.undo) {
@@ -150,7 +158,7 @@ impl TableState {
         let mut profit = 0;
         if let Some(b) = self.betsize {
             for phand in self.players.iter() {
-                if phand.is_player {
+                if self.dealer.len() >= 2 && phand.is_player {
                     profit += (b as f32 * phand.calc_payout(&self.dealer)) as i32;
                 }
             }

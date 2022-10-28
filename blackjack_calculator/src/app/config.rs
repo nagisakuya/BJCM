@@ -15,11 +15,16 @@ pub use general_setting::*;
 pub mod texts;
 pub use texts::*;
 
-#[derive(Default,serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub rule: Rule,
     pub kyes: Keys,
     pub general: GeneralSetting,
+}
+impl Default for Config{
+    fn default() -> Self {
+        Self { rule: DEMO_RULE, kyes: Default::default(), general: Default::default() }
+    }
 }
 impl Config {
     pub fn load() -> Self {
@@ -45,6 +50,21 @@ impl Config {
         "text_not_found"
     }
 }
+
+const DEMO_RULE:Rule = Rule{
+    NUMBER_OF_DECK: 1,
+    LATE_SURRENDER: false,
+    DOUBLE_AFTER_SPLIT : false,
+    RE_SPLIT : false,
+    ACTION_AFTER_SPLITTING_ACE : false,
+    DEALER_PEEKS_ACE : true, 
+    DEALER_PEEKS_TEN : false,
+    BJ_PAYBACK : 1.5,
+    BJ_AFTER_SPLIT : false,
+    DEALER_SOFT_17_STAND : false,
+    CHARLIE : None,
+    INSUALANCE: true,
+};
 
 #[cfg(test)]
 mod test {

@@ -19,18 +19,34 @@ impl Default for GeneralSetting {
 }
 
 pub struct GeneralSettingWindow {
-    pub general: GeneralSetting,
-    _is_activated: bool,
+    general: GeneralSetting,
+    opened: bool,
 }
 impl GeneralSettingWindow {
-    pub fn new(general: &GeneralSetting, activated: bool) -> GeneralSettingWindow {
+    pub fn new(general: GeneralSetting) -> GeneralSettingWindow {
         GeneralSettingWindow {
+            opened: false,
             general: general.clone(),
-            _is_activated: activated,
         }
+    }
+    pub fn switch(&mut self, config: &Config){
+        if self.opened{
+            self.try_close(config);
+        }else{
+            self.opened = true;
+        }
+    }
+    pub fn try_close(&mut self, config: &Config){
+        if config.general == self.general{
+            self.close();
+        }
+    }
+    pub fn close(&mut self){
+        self.opened = false;
     }
     pub fn show(&mut self, ctx: &Context, config: &Config) -> (bool, Option<GeneralSetting>) {
         let mut result = (false, None);
+        if !self.opened {return result}
         Window::new(config.get_text(TextKey::GeneralSettingWindowName))
             .auto_sized()
             .collapsible(false)
