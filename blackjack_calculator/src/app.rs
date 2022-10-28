@@ -26,6 +26,7 @@ use buy_window::*;
 
 const IMAGE_FOLDER_PATH: &str = "./data/images";
 const SUBPROCESS_PATH: &str = "./data/calc_ev_subprocess.exe";
+const SUBPROCESS_WSL_PATH: &str = "./data/calc_ev_subprocess";
 const ACTIVATION_CODE_PATH: &str = "./data/activation_code.txt";
 const SETTING_FILE_PATH: &str = "./data/setting.bin";
 const ASSET_FILE_PATH: &str = "./data/asset.bin";

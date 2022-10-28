@@ -1,8 +1,11 @@
 use super::*;
-use std::{thread::{self, JoinHandle}, sync::{Arc,Mutex}};
-use std::os::windows::process::CommandExt;
 use std::io::Read;
+use std::os::windows::process::CommandExt;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::{
+    sync::{Arc, Mutex},
+    thread::{self, JoinHandle},
+};
 
 pub struct TotalEvHandler {
     process: Option<(Arc<Mutex<std::process::Child>>, Deck, Instant)>,
@@ -13,9 +16,16 @@ pub struct TotalEvHandler {
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
     textures: [Option<TextureHandle>; 2],
+    wsl_installed: bool,
 }
 impl Default for TotalEvHandler {
     fn default() -> Self {
+        let wsl = {
+            let output = std::process::Command::new("WHERE").arg("/Q").arg("wsl")
+            .output()
+            .expect("failed to start process");
+            output.status.success()
+        };
         TotalEvHandler {
             progless: 0.0,
             process: None,
@@ -25,23 +35,24 @@ impl Default for TotalEvHandler {
             progless_resiever: None,
             total_ev_resiever: None,
             textures: Default::default(),
+            wsl_installed: wsl,
         }
     }
 }
 impl TotalEvHandler {
-    pub fn get_ev(&self) -> Option<f32>{
+    pub fn get_ev(&self) -> Option<f32> {
         match &self.total_ev {
-            Some(x) => {Some(x.0)},
-            None => {None},
+            Some(x) => Some(x.0),
+            None => None,
         }
     }
     pub fn setup(&mut self, cc: &eframe::CreationContext<'_>) {
-        let image = load_image_from_path(&format!("{}/play.png",IMAGE_FOLDER_PATH)).unwrap();
+        let image = load_image_from_path(&format!("{}/play.png", IMAGE_FOLDER_PATH)).unwrap();
         self.textures[0] = Some(cc.egui_ctx.load_texture("play", image));
-        let image = load_image_from_path(&format!("{}/stop.png",IMAGE_FOLDER_PATH)).unwrap();
+        let image = load_image_from_path(&format!("{}/stop.png", IMAGE_FOLDER_PATH)).unwrap();
         self.textures[1] = Some(cc.egui_ctx.load_texture("stop", image));
     }
-    pub fn update(&mut self, config:&Config, deck: &Deck) {
+    pub fn update(&mut self, config: &Config, deck: &Deck) {
         if self.calculate && self.process.is_none() {
             if self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck) {
                 self.spawn(deck, &config.rule);
@@ -65,13 +76,25 @@ impl TotalEvHandler {
         }
     }
     fn spawn(&mut self, deck: &Deck, rule: &Rule) {
-        let process = std::process::Command::new(SUBPROCESS_PATH)
+        const CREATE_NO_WINDOW:u32 = 0x08000000;
+        let process = if self.wsl_installed{
+            std::process::Command::new("wsl")
+            .arg(SUBPROCESS_WSL_PATH)
             .arg(&io_util::bytes_to_string(&deck.to_bytes()))
             .env("RULE", &io_util::bytes_to_string(&rule.to_bytes()))
             .stdout(std::process::Stdio::piped())
-            .creation_flags(0x08000000)
+            .creation_flags(CREATE_NO_WINDOW)
             .spawn()
-            .unwrap();
+            .unwrap()
+        }else{ 
+            std::process::Command::new(SUBPROCESS_PATH)
+            .arg(&io_util::bytes_to_string(&deck.to_bytes()))
+            .env("RULE", &io_util::bytes_to_string(&rule.to_bytes()))
+            .stdout(std::process::Stdio::piped())
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .unwrap()
+        };
         self.process = Some((Arc::new(Mutex::new(process)), deck.clone(), Instant::now()));
         self.stdout_resiever = Some(thread::spawn({
             let process = self.process.as_ref().unwrap().clone();
@@ -113,19 +136,19 @@ impl TotalEvHandler {
         self.reset();
         self.total_ev = prev_ev;
     }
-    pub fn reset(&mut self){
-        if let Some(p) = self.process.take(){
-            thread::spawn(move||{
+    pub fn reset(&mut self) {
+        if let Some(p) = self.process.take() {
+            thread::spawn(move || {
                 let _ = p.0.lock().unwrap().kill();
             });
         }
-        *self = TotalEvHandler{
-            textures:self.textures.clone(),
+        *self = TotalEvHandler {
+            textures: self.textures.clone(),
             ..Default::default()
         };
     }
     pub fn draw_contents(&mut self, ui: &mut Ui, table_state: &TableState) {
-        ui.vertical_centered(|ui|{
+        ui.vertical_centered(|ui| {
             if self.calculate {
                 if ui
                     .add(ImageButton::new(
@@ -165,5 +188,32 @@ impl TotalEvHandler {
                 .size(20.0),
             );
         });
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::process::Command;
+    #[test]
+    fn test() {
+        let output = std::process::Command::new("WHERE").arg("/Q").arg("wsl")
+            .output()
+            .expect("failed to start process");
+            println!("{:?}", output.status);
+        println!("{:?}", String::from_utf8_lossy(&output.stdout));
+        let output = Command::new("rustc")
+            .arg("--version")
+            .output()
+            .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
+
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout);
+
+            print!("rustc succeeded and stdout was:\n{}", s);
+        } else {
+            let s = String::from_utf8_lossy(&output.stderr);
+
+            print!("rustc failed and stderr was:\n{}", s);
+        }
     }
 }
