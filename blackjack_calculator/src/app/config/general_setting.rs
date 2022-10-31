@@ -7,6 +7,7 @@ pub struct GeneralSetting {
     pub language: Language,
     pub infinite: bool,
     pub rotate_num: bool,
+    pub disable_wsl:bool,
 }
 impl Default for GeneralSetting {
     fn default() -> Self {
@@ -14,6 +15,7 @@ impl Default for GeneralSetting {
             language: Language::Japanese,
             infinite: false,
             rotate_num: true,
+            disable_wsl: false,
         }
     }
 }
@@ -67,6 +69,7 @@ impl GeneralSettingWindow {
                 ui.add_space(10.0);
                 ui.add(Checkbox::new(&mut self.general.infinite, config.get_text(TextKey::GeneralSettingDiscard)));
                 ui.add(Checkbox::new(&mut self.general.rotate_num, config.get_text(TextKey::GeneralSettingRotateNum)));
+                ui.add(Checkbox::new(&mut self.general.disable_wsl, config.get_text(TextKey::GeneralSettingWSL)));
                 ui.horizontal(|ui| {
                     if ui.button("cancel").clicked() {
                         result.0 = true;

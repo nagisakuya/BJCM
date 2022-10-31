@@ -24,7 +24,7 @@ use asset_manager::*;
 mod buy_window;
 use buy_window::*;
 
-const IMAGE_FOLDER_PATH: &str = "./data/images";
+//const IMAGE_FOLDER_PATH: &str = "./data/images";
 const SUBPROCESS_PATH: &str = "./data/calc_ev_subprocess.exe";
 const SUBPROCESS_WSL_PATH: &str = "./data/calc_ev_subprocess";
 const ACTIVATION_CODE_PATH: &str = "./data/activation_code.txt";
@@ -51,6 +51,8 @@ impl AppMain {
         } else {
             Config::default()
         };
+
+        rule::override_rule(config.rule.clone());
 
         let mut _self = Self {
             table_state: TableState::new(&config),
@@ -153,6 +155,8 @@ impl eframe::App for AppMain {
                     }
                 })
             });
+        self.total_ev_handler
+            .update(&self.config, &self.table_state,ctx);
         SidePanel::right("side_panel")
             .resizable(false)
             .max_width(140.0)
@@ -162,13 +166,19 @@ impl eframe::App for AppMain {
                     .frame(Frame::default().outer_margin(style::Margin::same(0.0)))
                     .show_inside(ui, |ui| {
                         ui.vertical_centered(|ui| {
-                            self.total_ev_handler.draw_contents(ui, &self.table_state);
-                            betsize = self.asset_manager.draw_compornents(
+                            self.total_ev_handler.draw_text(ui, &self.table_state);
+                            betsize = self.asset_manager.draw_text(
                                 ui,
                                 self.total_ev_handler.get_ev(),
+                                &self.config,
+                            );
+                            self.total_ev_handler.draw_controller(ui,&self.config,&self.table_state.deck);
+                            self.asset_manager.show_balance(
+                                ui,
                                 &mut disable_key_input_flag,
                                 &self.config,
                             );
+                            ui.add_space(10.0);
                         });
                     });
                 self.table_state.show_deck(ui, &self.config);
@@ -181,6 +191,7 @@ impl eframe::App for AppMain {
             self.rule_setting_window.close();
             if self.activator.check_activated() {
                 if let Some(o) = result.1 {
+                    rule::override_rule(o.clone());
                     self.config.rule = o;
                     self.config.save();
                     self.total_ev_handler.reset();
@@ -215,9 +226,6 @@ impl eframe::App for AppMain {
         self.asset_manager
             .show_window(ctx, &self.config, &mut disable_key_input_flag);
 
-        self.total_ev_handler
-            .update(&self.config, &self.table_state.deck);
-
         if !disable_key_input_flag {
             self.table_state.update(
                 ctx,
@@ -231,7 +239,7 @@ impl eframe::App for AppMain {
     }
 }
 
-fn load_image_from_path(path: &str) -> Result<ColorImage, image::ImageError> {
+fn _load_image_from_path(path: &str) -> Result<ColorImage, image::ImageError> {
     let path = std::path::Path::new(path);
     let image = image::io::Reader::open(path)?.decode()?;
     let size = [image.width() as _, image.height() as _];

@@ -7,34 +7,46 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+#[derive(PartialEq, Eq, Clone)]
+enum CalcMode {
+    Idle,
+    Endless,
+    DealerStands,
+}
+
 pub struct TotalEvHandler {
     process: Option<(Arc<Mutex<std::process::Child>>, Deck, Instant)>,
-    calculate: bool,
+    calculate: CalcMode,
     total_ev: Option<(f32, Instant, Deck)>,
     total_ev_resiever: Option<Receiver<f32>>,
     progless: f32,
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
-    textures: [Option<TextureHandle>; 2],
+    //textures: [Option<TextureHandle>; 2],
     wsl_installed: bool,
 }
 impl Default for TotalEvHandler {
     fn default() -> Self {
         let wsl = {
-            let output = std::process::Command::new("WHERE").arg("/Q").arg("wsl")
-            .output()
-            .expect("failed to start process");
+            let output = std::process::Command::new("WHERE")
+                .arg("/Q")
+                .arg("wsl")
+                .creation_flags(CREATE_NO_WINDOW)
+                .output()
+                .expect("failed to start process");
             output.status.success()
         };
         TotalEvHandler {
             progless: 0.0,
             process: None,
             total_ev: None,
-            calculate: false,
+            calculate: CalcMode::Idle,
             stdout_resiever: None,
             progless_resiever: None,
             total_ev_resiever: None,
-            textures: Default::default(),
+            //textures: Default::default(),
             wsl_installed: wsl,
         }
     }
@@ -46,18 +58,26 @@ impl TotalEvHandler {
             None => None,
         }
     }
-    pub fn setup(&mut self, cc: &eframe::CreationContext<'_>) {
-        let image = load_image_from_path(&format!("{}/play.png", IMAGE_FOLDER_PATH)).unwrap();
+    pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {
+        /*let image = load_image_from_path(&format!("{}/play.png", IMAGE_FOLDER_PATH)).unwrap();
         self.textures[0] = Some(cc.egui_ctx.load_texture("play", image));
         let image = load_image_from_path(&format!("{}/stop.png", IMAGE_FOLDER_PATH)).unwrap();
-        self.textures[1] = Some(cc.egui_ctx.load_texture("stop", image));
+        self.textures[1] = Some(cc.egui_ctx.load_texture("stop", image));*/
     }
-    pub fn update(&mut self, config: &Config, deck: &Deck) {
-        if self.calculate && self.process.is_none() {
-            if self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck) {
-                self.spawn(deck, &config.rule);
+    pub fn update(&mut self, config: &Config, table: &TableState, ctx: &Context) {
+        let deck = &table.deck;
+        let dealer = &table.dealer;
+        if self.process.is_none() {
+            if self.calculate == CalcMode::Endless
+                || self.calculate == CalcMode::DealerStands
+                    && (dealer.stand() || ctx.input().key_pressed(config.kyes.next))
+            {
+                if self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck) {
+                    self.spawn(deck, &config);
+                }
             }
         }
+
         if let Some(ref x) = self.progless_resiever {
             if let Ok(o) = x.try_recv() {
                 self.progless = o;
@@ -75,25 +95,24 @@ impl TotalEvHandler {
             }
         }
     }
-    fn spawn(&mut self, deck: &Deck, rule: &Rule) {
-        const CREATE_NO_WINDOW:u32 = 0x08000000;
-        let process = if self.wsl_installed{
+    fn spawn(&mut self, deck: &Deck, config: &Config) {
+        let process = if self.wsl_installed && !config.general.disable_wsl {
             std::process::Command::new("wsl")
-            .arg(SUBPROCESS_WSL_PATH)
-            .arg(&io_util::bytes_to_string(&deck.to_bytes()))
-            .env("RULE", &io_util::bytes_to_string(&rule.to_bytes()))
-            .stdout(std::process::Stdio::piped())
-            .creation_flags(CREATE_NO_WINDOW)
-            .spawn()
-            .unwrap()
-        }else{ 
+                .arg("RULE=".to_string() + &io_util::bytes_to_string(&config.rule.to_bytes()))
+                .arg(SUBPROCESS_WSL_PATH)
+                .arg(&io_util::bytes_to_string(&deck.to_bytes()))
+                .stdout(std::process::Stdio::piped())
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn()
+                .unwrap()
+        } else {
             std::process::Command::new(SUBPROCESS_PATH)
-            .arg(&io_util::bytes_to_string(&deck.to_bytes()))
-            .env("RULE", &io_util::bytes_to_string(&rule.to_bytes()))
-            .stdout(std::process::Stdio::piped())
-            .creation_flags(CREATE_NO_WINDOW)
-            .spawn()
-            .unwrap()
+                .arg(&io_util::bytes_to_string(&deck.to_bytes()))
+                .env("RULE", &io_util::bytes_to_string(&config.rule.to_bytes()))
+                .stdout(std::process::Stdio::piped())
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn()
+                .unwrap()
         };
         self.process = Some((Arc::new(Mutex::new(process)), deck.clone(), Instant::now()));
         self.stdout_resiever = Some(thread::spawn({
@@ -132,45 +151,22 @@ impl TotalEvHandler {
         }));
     }
     fn stop(&mut self) {
-        let prev_ev = self.total_ev.clone();
-        self.reset();
-        self.total_ev = prev_ev;
-    }
-    pub fn reset(&mut self) {
         if let Some(p) = self.process.take() {
             thread::spawn(move || {
                 let _ = p.0.lock().unwrap().kill();
             });
         }
+    }
+    pub fn reset(&mut self) {
+        self.stop();
         *self = TotalEvHandler {
-            textures: self.textures.clone(),
+            //textures: self.textures.clone(),
+            calculate: self.calculate.clone(),
             ..Default::default()
         };
     }
-    pub fn draw_contents(&mut self, ui: &mut Ui, table_state: &TableState) {
+    pub fn draw_text(&mut self, ui: &mut Ui, table_state: &TableState) {
         ui.vertical_centered(|ui| {
-            if self.calculate {
-                if ui
-                    .add(ImageButton::new(
-                        self.textures[1].as_ref().unwrap(),
-                        vec2(50.0, 50.0),
-                    ))
-                    .clicked()
-                {
-                    self.stop();
-                };
-            } else {
-                if ui
-                    .add(ImageButton::new(
-                        self.textures[0].as_ref().unwrap(),
-                        vec2(50.0, 50.0),
-                    ))
-                    .clicked()
-                {
-                    self.calculate = true;
-                };
-            }
-            ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
             ui.label(
                 RichText::new(match self.total_ev {
                     Some(ref mut s) => {
@@ -189,31 +185,65 @@ impl TotalEvHandler {
             );
         });
     }
+    pub fn draw_controller(&mut self, ui: &mut Ui, config: &Config, deck: &Deck) {
+        ui.vertical_centered(|ui| {
+            ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
+            ui.horizontal(|ui| {
+                let color = if self.calculate == CalcMode::DealerStands {
+                    Color32::GOLD
+                } else {
+                    Color32::DARK_GRAY
+                };
+                ui.add_space(3.0);
+                if ui.add(Button::new("     ▶     ").fill(color)).clicked() {
+                    match self.calculate {
+                        CalcMode::Idle => {
+                            self.calculate = CalcMode::DealerStands;
+                            self.spawn(deck, config);
+                        }
+                        CalcMode::DealerStands => {
+                            self.calculate = CalcMode::Idle;
+                            self.stop();
+                        }
+                        CalcMode::Endless => self.calculate = CalcMode::DealerStands,
+                    }
+                }
+                let color = if self.calculate == CalcMode::Endless {
+                    Color32::GOLD
+                } else {
+                    Color32::DARK_GRAY
+                };
+                if ui.add(Button::new("     ∞     ").fill(color)).clicked() {
+                    match self.calculate {
+                        CalcMode::Idle => self.calculate = CalcMode::Endless,
+                        CalcMode::DealerStands => self.calculate = CalcMode::Endless,
+                        CalcMode::Endless => {
+                            self.calculate = CalcMode::Idle;
+                            self.stop();
+                        }
+                    }
+                }
+            });
+        });
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use std::process::Command;
+    use super::*;
     #[test]
     fn test() {
-        let output = std::process::Command::new("WHERE").arg("/Q").arg("wsl")
-            .output()
-            .expect("failed to start process");
-            println!("{:?}", output.status);
-        println!("{:?}", String::from_utf8_lossy(&output.stdout));
-        let output = Command::new("rustc")
-            .arg("--version")
-            .output()
-            .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
-
-        if output.status.success() {
-            let s = String::from_utf8_lossy(&output.stdout);
-
-            print!("rustc succeeded and stdout was:\n{}", s);
-        } else {
-            let s = String::from_utf8_lossy(&output.stderr);
-
-            print!("rustc failed and stderr was:\n{}", s);
-        }
+        let deck = Deck::new(8);
+        let mut rule = Rule::default();
+        rule.BJ_PAYBACK = 1.5;
+        println!("{}", io_util::bytes_to_string(&rule.to_bytes()));
+        println!("{}", SUBPROCESS_WSL_PATH);
+        println!("{}", io_util::bytes_to_string(&deck.to_bytes()));
+        println!(
+            "wsl RULE=\"{}\" {} {}",
+            io_util::bytes_to_string(&rule.to_bytes()),
+            SUBPROCESS_WSL_PATH,
+            io_util::bytes_to_string(&deck.to_bytes())
+        );
     }
 }

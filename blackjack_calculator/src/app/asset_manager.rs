@@ -47,17 +47,7 @@ impl AssetManager {
             Default::default()
         }
     }
-    pub fn draw_compornents(&mut self, ui: &mut Ui, ev: Option<f32>, input_flag: &mut bool,config:&Config) -> u32 {
-        let betsize = if let Some(ev) = ev {
-            self.calc_betsize(ev)
-        } else {
-            self.min_bet
-        };
-
-        let text = format!("bet:{betsize}");
-
-        ui.label(RichText::new(text).size(20.0));
-
+    pub fn show_balance(&mut self, ui: &mut Ui, input_flag: &mut bool,config:&Config){
         ui.horizontal(|ui|{
             ui.label(config.get_text(TextKey::Balance).to_owned() + ":");
             Self::add_numonly_textedit(ui, &mut self.current_asset, input_flag, 100.0);
@@ -67,6 +57,17 @@ impl AssetManager {
                 self.save();
             }
         });
+    }
+    pub fn draw_text(&mut self, ui: &mut Ui, ev: Option<f32>,_config:&Config) -> u32 {
+        let betsize = if let Some(ev) = ev {
+            self.calc_betsize(ev)
+        } else {
+            self.min_bet
+        };
+
+        let text = format!("bet:{betsize}");
+
+        ui.label(RichText::new(text).size(20.0));
 
         betsize
     }

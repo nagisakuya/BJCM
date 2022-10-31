@@ -16,7 +16,7 @@ pub struct TableState {
     pub(super) deck: Deck,
     players: VecDeque<PhandWithResult>,
     base_players: VecDeque<PhandWithResult>,
-    dealer: Dealer,
+    pub(super) dealer: Dealer,
     stepper: Stepper,
     selected: Selected,
     discard: Vec<Card>,
@@ -136,7 +136,6 @@ impl TableState {
             if history.len() > HISTORY_LIMIT {
                 history.pop_front();
             }
-            self.update_hand_ev(&config.rule);
         }
         if update_hand_ev{
             self.update_hand_ev(&config.rule);
@@ -166,6 +165,7 @@ impl TableState {
         self.dealer = Dealer::new();
         self.players = self.base_players.clone();
         self.discard.clear();
+        self.betsize = None;
         if let Some(x) = self.stepper.reset(self.players.len()) {
             self.selected = x;
         }
@@ -214,7 +214,19 @@ impl TableState {
                 Selected::Discard => self.selected = Selected::Dealer,
             }
         };
-        if ctx.input().key_pressed(config.kyes.up) || ctx.input().key_pressed(config.kyes.down) {
+        if ctx.input().key_pressed(config.kyes.up) {
+            match self.selected {
+                Selected::Player(_) => self.selected = Selected::Dealer,
+                Selected::Dealer => {
+                    self.selected = Selected::Player(self.players.len() / 2)
+                }
+                Selected::Discard =>{
+                    self.selected = Selected::Dealer
+                }
+            }
+            *updated = true;
+        };
+        if ctx.input().key_pressed(config.kyes.down) {
             match self.selected {
                 Selected::Player(_) => self.selected = Selected::Dealer,
                 Selected::Dealer | Selected::Discard => {
@@ -227,7 +239,7 @@ impl TableState {
 
     fn update_hand_ev(&mut self, rule: &Rule) {
         for phand in self.players.iter_mut() {
-            if self.dealer.len() == 1 && phand.len() >= 2 && phand.is_player {
+            if self.dealer.len() == 1 && phand.len() >= 2 && phand.is_player && phand.actionable() {
                 let phand_str =
                     io_util::bytes_to_string(&bincode::serialize(&phand.get_phand()).unwrap());
                 let dealer = io_util::bytes_to_string(&bincode::serialize(&self.dealer).unwrap());
