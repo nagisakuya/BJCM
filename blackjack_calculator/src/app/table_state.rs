@@ -158,7 +158,7 @@ impl TableState {
         if let Some(b) = self.betsize {
             for phand in self.players.iter() {
                 if self.dealer.len() >= 2 && phand.is_player {
-                    profit += (b as f32 * phand.calc_payout(&self.dealer)) as i32;
+                    profit += (b as f64 * phand.calc_payout(&self.dealer)) as i32;
                 }
             }
         }

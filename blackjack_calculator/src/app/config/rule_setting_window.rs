@@ -5,7 +5,7 @@ pub struct RuleSettingWindow{
     rule:Rule,
     charlie_enable:bool,
     charlie:usize,
-    bj_odd:f32,
+    bj_odd:f64,
     is_activated:bool,
     opened:bool,
 }
