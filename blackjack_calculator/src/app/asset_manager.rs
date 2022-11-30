@@ -58,9 +58,9 @@ impl AssetManager {
             }
         });
     }
-    pub fn draw_text(&mut self, ui: &mut Ui, ev: Option<f32>,_config:&Config) -> u32 {
-        let betsize = if let Some(ev) = ev {
-            self.calc_betsize(ev)
+    pub fn draw_text(&mut self, ui: &mut Ui, optimal_betsize: Option<f32>,_config:&Config) -> u32 {
+        let betsize = if let Some(t) = optimal_betsize {
+            self.calc_betsize(t)
         } else {
             self.min_bet
         };
@@ -71,8 +71,8 @@ impl AssetManager {
 
         betsize
     }
-    pub fn calc_betsize(&self, ev: f32) -> u32 {
-        let bet = self.total_asset as f32 * ev;
+    pub fn calc_betsize(&self, optimal_betsize: f32) -> u32 {
+        let bet = self.total_asset as f32 * optimal_betsize;
         let mut a = (bet / self.bet_step as f32) as u32;
         let b = bet % self.bet_step as f32;
         if b >= (self.bet_step as f32 * self.round_up) {

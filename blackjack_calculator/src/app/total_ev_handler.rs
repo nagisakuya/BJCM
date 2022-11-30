@@ -20,7 +20,8 @@ pub struct TotalEvHandler {
     process: Option<(Arc<Mutex<std::process::Child>>, Deck, Instant)>,
     calculate: CalcMode,
     total_ev: Option<(f32, Instant, Deck)>,
-    total_ev_resiever: Option<Receiver<f32>>,
+    optimal_betsize: Option<f32>,
+    total_ev_resiever: Option<Receiver<(f32,f32)>>,
     progless: f32,
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
@@ -42,6 +43,7 @@ impl Default for TotalEvHandler {
             progless: 0.0,
             process: None,
             total_ev: None,
+            optimal_betsize: None,
             calculate: CalcMode::Idle,
             stdout_resiever: None,
             progless_resiever: None,
@@ -52,9 +54,16 @@ impl Default for TotalEvHandler {
     }
 }
 impl TotalEvHandler {
-    pub fn get_ev(&self) -> Option<f32> {
+    //unused
+    pub fn _get_ev(&self) -> Option<f32> {
         match &self.total_ev {
             Some(x) => Some(x.0),
+            None => None,
+        }
+    }
+    pub fn get_optimal_betsize(&self) -> Option<f32> {
+        match &self.optimal_betsize {
+            Some(x) => Some(x.clone()),
             None => None,
         }
     }
@@ -84,12 +93,13 @@ impl TotalEvHandler {
             }
         }
         if let Some(ref x) = self.total_ev_resiever {
-            if let Ok(o) = x.try_recv() {
+            if let Ok((ev,betsize)) = x.try_recv() {
                 self.total_ev = Some((
-                    o,
+                    ev,
                     self.process.as_ref().unwrap().2,
                     self.process.as_ref().unwrap().1.clone(),
                 ));
+                self.optimal_betsize = Some(betsize);
                 self.process = None;
                 self.progless = 0.0;
             }
@@ -117,7 +127,7 @@ impl TotalEvHandler {
         self.process = Some((Arc::new(Mutex::new(process)), deck.clone(), Instant::now()));
         self.stdout_resiever = Some(thread::spawn({
             let process = self.process.as_ref().unwrap().clone();
-            let (total_ev_sender, total_ev_resiever): (Sender<f32>, Receiver<f32>) =
+            let (total_ev_sender, total_ev_resiever): (Sender<(f32,f32)>, Receiver<(f32,f32)>) =
                 mpsc::channel();
             let (progless_sender, progless_resiever): (Sender<f32>, Receiver<f32>) =
                 mpsc::channel();
@@ -135,7 +145,8 @@ impl TotalEvHandler {
                         let string = String::from_utf8(buffer.clone()).unwrap();
                         let strings: Vec<&str> = string.split("\n").collect();
                         if process.try_wait().unwrap().is_some() {
-                            let total_ev = strings.last().unwrap().parse().unwrap();
+                            let temp:Vec<_> = strings.last().unwrap().split(',').collect();
+                            let total_ev = (temp.first().unwrap().parse().unwrap(),temp.last().unwrap().parse().unwrap());
                             total_ev_sender.send(total_ev).unwrap();
                             break;
                         } else {

@@ -169,7 +169,7 @@ impl eframe::App for AppMain {
                             self.total_ev_handler.draw_text(ui, &self.table_state);
                             betsize = self.asset_manager.draw_text(
                                 ui,
-                                self.total_ev_handler.get_ev(),
+                                self.total_ev_handler.get_optimal_betsize(),
                                 &self.config,
                             );
                             self.total_ev_handler.draw_controller(ui,&self.config,&self.table_state.deck);
