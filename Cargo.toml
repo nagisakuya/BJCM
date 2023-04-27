@@ -1,12 +1,4 @@
 [workspace]
 members = [
-    "blackjack_lib",
-    "montecalro",
-    "calculate_ev",
-    "io_util",
-    "defined_strategy_builder",
     "blackjack_calculator",
-    "calc_ev_subprocess",
-    "code_generator",
-    "code_gen_lib",
 ]
