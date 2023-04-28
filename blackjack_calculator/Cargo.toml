@@ -2,7 +2,6 @@
 name = "blackjack_calculator"
 default-run = "blackjack_calculator_bin"
 version = "0.1.0"
-authors = ["Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
 edition = "2021"
 rust-version = "1.60"
 
@@ -21,9 +20,9 @@ egui = "0.18.0"
 eframe = { version = "0.18.0", features = ["persistence"] }
 serde = { version = "1.0", features = ["derive"] } # You only need this if you want app persistence
 
-blackjack_lib = {path = "../blackjack_lib"}
-io_util = {path = "../io_util"}
-code_gen_lib = {path = "../code_gen_lib"}
+blackjack_lib = {git = "ssh://git@github.com/nagisakuya/BlackjackLib.git"}
+io_util = {git = "ssh://git@github.com/nagisakuya/IoUtility-rust.git"}
+code_gen_lib = {git = "ssh://git@github.com/nagisakuya/BJCMprivate.git"}
 
 image = "0.24.2"
 bincode = "1.3"
