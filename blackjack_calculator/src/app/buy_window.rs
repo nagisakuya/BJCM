@@ -10,7 +10,7 @@ impl BuyWindow {
     pub fn new() -> Self {
         BuyWindow {
             opened: false,
-            pcid: activator::Activator::get_pcid(),
+            pcid: code_gen_lib::get_pcid(),
             activation_code: String::new(),
             activation_text: None,
         }

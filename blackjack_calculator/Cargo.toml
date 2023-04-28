@@ -22,7 +22,7 @@ serde = { version = "1.0", features = ["derive"] } # You only need this if you w
 
 blackjack_lib = {git = "ssh://git@github.com/nagisakuya/BlackjackLib.git"}
 io_util = {git = "ssh://git@github.com/nagisakuya/IoUtility-rust.git"}
-code_gen_lib = {git = "ssh://git@github.com/nagisakuya/BJCMprivate.git"}
+code_gen_lib = {git = "ssh://git@github.com/nagisakuya/BJCMprivate.git", branch="master"}
 
 image = "0.24.2"
 bincode = "1.3"

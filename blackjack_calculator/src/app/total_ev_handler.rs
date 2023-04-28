@@ -106,6 +106,7 @@ impl TotalEvHandler {
         }
     }
     fn spawn(&mut self, deck: &Deck, config: &Config) {
+        //privateであるRULEやDECKをbinに変換しないといけない時点でセキュリティになってるとは思う
         let process = if self.wsl_installed && !config.general.disable_wsl {
             std::process::Command::new("wsl")
                 .arg("RULE=".to_string() + &io_util::bytes_to_string(&config.rule.to_bytes()))

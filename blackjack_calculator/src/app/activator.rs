@@ -1,4 +1,4 @@
-use std::{io::{Read, Write}, os::windows::process::CommandExt};
+use std::{io::{Read, Write}};
 use super::*;
 
 
@@ -20,7 +20,7 @@ impl Activator {
         _self
     }
     pub fn check_activated(&mut self) -> bool{
-        let temp = self.code.is_some() && &Self::get_hash() == self.code.as_ref().unwrap();
+        let temp = self.code.is_some() && code_gen_lib::check_code(self.code.as_ref().unwrap());
         self.activated = temp;
         temp
     }
@@ -56,34 +56,5 @@ impl Activator {
         let mut string = String::new();
         file.read_to_string(&mut string).unwrap();
         return Ok(string);
-    }
-    fn get_hash() -> String{
-        let temp = Activator::get_pcid();
-        code_gen_lib::generate_hash(&temp)
-    }
-    pub fn get_pcid() -> String {
-        let process = std::process::Command::new("reg",)
-        .args(&["query","HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography","/v","MachineGuid"])
-        .stdout(std::process::Stdio::piped())
-        .creation_flags(0x08000000)
-        .spawn()
-        .unwrap();
-        let mut string = String::new();
-        process.stdout.unwrap().read_to_string(&mut string).unwrap();
-        string.split(" ").last().unwrap().trim().to_owned()
-    }
-}
-
-#[cfg(test)]
-mod test{
-    use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher};
-
-    use super::*;
-    #[test]
-    fn test(){
-        let temp = Activator::get_pcid();
-        let mut hasher = DefaultHasher::new();
-        temp.hash(&mut hasher);
-        println!("{}",hasher.finish());
     }
 }
