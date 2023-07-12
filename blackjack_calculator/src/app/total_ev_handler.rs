@@ -31,9 +31,9 @@ pub struct TotalEvHandler {
 impl Default for TotalEvHandler {
     fn default() -> Self {
         let wsl = {
-            let output = std::process::Command::new("WHERE")
-                .arg("/Q")
-                .arg("wsl")
+            let output = std::process::Command::new("wsl")
+                .arg("echo")
+                .arg("1")
                 .creation_flags(CREATE_NO_WINDOW)
                 .output()
                 .expect("failed to start process");
