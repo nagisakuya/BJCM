@@ -62,7 +62,6 @@ create_text_and_enum!(TextKey,load_texts,
     (AssetWindowThreshold,["round-up threshold","切り上げ閾値"]),
     (Close,["close","閉じる"]),
     (Balance,["balance","残高"]),
-    (EstimatedRTPLabel,["TC","TC"]),
     (ActivationButton,["activate","activate"]),
 );
 

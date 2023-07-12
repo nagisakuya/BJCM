@@ -3,10 +3,6 @@ use config::*;
 
 impl TableState {
     pub fn show_deck(&self, ui: &mut Ui, config: &Config) {
-        const GRIFFIN_ULTIMATE: [f64; 10] =
-            [-60.0, 37.0, 45.0, 52.0, 70.0, 46.0, 27.0, 0.0, -17.0, -50.0];
-        const GRIFFIN_ULTIMATE_MULTIPLER: f64 = 10.0 / 554.0;
-        let mut count = 0.0;
         let max_rect = ui.max_rect();
         const HEIGHT: f32 = 20.0;
         const MARGIN: f32 = 1.0;
@@ -27,17 +23,8 @@ impl TableState {
                 Color32::from_gray(200),
             );
             ui.painter().add(text_shape);
-            count += ((config.rule.NUMBER_OF_DECK * if i != 9 { 4 } else { 16 }) - self.deck[i])
-                as f64
-                * GRIFFIN_ULTIMATE[i];
         }
-        let true_count = count * GRIFFIN_ULTIMATE_MULTIPLER / config.rule.NUMBER_OF_DECK as f64;
         ui.add_space(10.0 * (HEIGHT + MARGIN));
-        ui.label(RichText::new(format!(
-            "{} = {:3>+1.2}",
-            config.get_text(TextKey::EstimatedRTPLabel),
-            (true_count)
-        )));
     }
 
     pub fn draw_table(&mut self, ui: &mut Ui, config: &Config) {
