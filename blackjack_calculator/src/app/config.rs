@@ -61,7 +61,7 @@ const DEMO_RULE:Rule = Rule{
     DEALER_PEEKS_TEN : false,
     BJ_PAYBACK : 1.5,
     BJ_AFTER_SPLIT : false,
-    DEALER_SOFT_17_STAND : false,
+    DEALER_SOFT_17_STAND : true,
     CHARLIE : None,
     INSUALANCE: true,
 };
