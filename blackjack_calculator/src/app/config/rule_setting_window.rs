@@ -68,7 +68,7 @@ impl RuleSettingWindow{
             ui.add(Checkbox::new(&mut self.rule.DOUBLE_AFTER_SPLIT, "double after split"));
             ui.add(Checkbox::new(&mut self.rule.BJ_AFTER_SPLIT, "blackjack after split"));
             ui.add(Checkbox::new(&mut self.rule.RE_SPLIT, "resplit"));
-            let mut temp = !self.rule.DEALER_SOFT_17_STAND;
+            let mut temp = !self.rule.ACTION_AFTER_SPLITTING_ACE;
             ui.add(Checkbox::new(&mut temp, "splitting ace stands"));
             self.rule.DEALER_SOFT_17_STAND = !temp;
             ui.add(Checkbox::new(&mut self.rule.INSUALANCE, "Insualance"));
