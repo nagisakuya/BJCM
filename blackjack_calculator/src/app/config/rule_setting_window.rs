@@ -70,7 +70,7 @@ impl RuleSettingWindow{
             ui.add(Checkbox::new(&mut self.rule.RE_SPLIT, "resplit"));
             let mut temp = !self.rule.ACTION_AFTER_SPLITTING_ACE;
             ui.add(Checkbox::new(&mut temp, "splitting ace stands"));
-            self.rule.DEALER_SOFT_17_STAND = !temp;
+            self.rule.ACTION_AFTER_SPLITTING_ACE = !temp;
             ui.add(Checkbox::new(&mut self.rule.INSUALANCE, "Insualance"));
             if self.rule.INSUALANCE{
                 self.rule.DEALER_PEEKS_ACE = true;
