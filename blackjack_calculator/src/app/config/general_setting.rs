@@ -46,7 +46,7 @@ impl GeneralSettingWindow {
     pub fn close(&mut self){
         self.opened = false;
     }
-    pub fn show(&mut self, ctx: &Context) -> (bool, Option<GeneralSetting>) {
+    pub fn show(&mut self, ctx: &Context, wsl_installed: bool) -> (bool, Option<GeneralSetting>) {
         let mut result = (false, None);
         if !self.opened {return result}
         Window::new(get_text(TextKey::GeneralSettingWindowName))
@@ -69,7 +69,12 @@ impl GeneralSettingWindow {
                 ui.add_space(10.0);
                 ui.add(Checkbox::new(&mut self.general.infinite, get_text(TextKey::GeneralSettingDiscard)));
                 ui.add(Checkbox::new(&mut self.general.rotate_num, get_text(TextKey::GeneralSettingRotateNum)));
-                ui.add(Checkbox::new(&mut self.general.disable_wsl, get_text(TextKey::GeneralSettingWSL)));
+                if wsl_installed {
+                    ui.label(format!("WSL:{}",get_text(TextKey::GeneralSettingWSLInstalled)));
+                    ui.add(Checkbox::new(&mut self.general.disable_wsl, get_text(TextKey::GeneralSettingWSL)));
+                }else{
+                    ui.label(format!("WSL:{}",get_text(TextKey::GeneralSettingWSLNotInstalled)));
+                }
                 ui.horizontal(|ui| {
                     if ui.button("cancel").clicked() {
                         result.0 = true;

@@ -6,11 +6,10 @@ pub struct RuleSettingWindow{
     charlie_enable:bool,
     charlie:usize,
     bj_odd:f64,
-    is_activated:bool,
     opened:bool,
 }
 impl RuleSettingWindow{
-    pub fn new(rule:&Rule,activated:bool) -> Self{
+    pub fn new(rule:&Rule) -> Self{
         let charlie = if let Some(t) = rule.CHARLIE{
             t
         }else {6};
@@ -19,7 +18,6 @@ impl RuleSettingWindow{
             charlie_enable:rule.CHARLIE.is_some(),
             charlie,
             bj_odd:rule.BJ_PAYBACK + 1.0,
-            is_activated:activated,
             opened:false,
         }
     }
@@ -46,7 +44,7 @@ impl RuleSettingWindow{
         rule.BJ_PAYBACK = self.bj_odd - 1.0;
         rule
     }
-    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Rule>){
+    pub fn show(&mut self,ctx:&Context,is_activated:bool) -> (bool,Option<Rule>){
         let mut result = (false,None);
         if !self.opened {return result}
         Window::new(get_text(TextKey::RuleSettingWindowName))
@@ -78,14 +76,14 @@ impl RuleSettingWindow{
                 ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_ACE, "dealer peeks with Ace"));
             }
             ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_TEN, "dealer peeks with Ten"));
-            if !self.is_activated{
+            if !is_activated{
                 ui.label(RichText::new(get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
                 if ui.button(get_text(TextKey::Cancel)).clicked(){
                     result.0 = true;
                 }
-                if self.is_activated && ui.button(get_text(TextKey::Apply)).clicked(){
+                if is_activated && ui.button(get_text(TextKey::Apply)).clicked(){
                     result.0 = true;
                     result.1 = Some(self.to_rule());
                 }

@@ -60,8 +60,8 @@ impl AppMain {
             table_state: TableState::new(&config),
             table_history: VecDeque::new(),
             total_ev_handler: Default::default(),
-            rule_setting_window: RuleSettingWindow::new(&config.rule, activator.check_activated()),
-            key_setting_window: KeySettingWindow::new(&config.kyes, activator.check_activated()),
+            rule_setting_window: RuleSettingWindow::new(&config.rule),
+            key_setting_window: KeySettingWindow::new(&config.kyes),
             general_setting_window: GeneralSettingWindow::new(config.general.clone()),
             asset_manager: AssetManager::load(),
             buy_window: BuyWindow::new(),
@@ -185,7 +185,7 @@ impl eframe::App for AppMain {
         CentralPanel::default().show(ctx, |ui| {
             self.table_state.draw_table(ui);
         });
-        let result = self.rule_setting_window.show(ctx);
+        let result = self.rule_setting_window.show(ctx,self.activator.activated);
         if result.0 {
             self.rule_setting_window.close();
             if self.activator.check_activated() {
@@ -199,7 +199,7 @@ impl eframe::App for AppMain {
                 }
             }
         }
-        let result = self.key_setting_window.show(ctx);
+        let result = self.key_setting_window.show(ctx,self.activator.activated);
         if result.0 {
             self.key_setting_window.close();
             if let Some(o) = result.1 {
@@ -210,7 +210,7 @@ impl eframe::App for AppMain {
             }
         }
 
-        let result = self.general_setting_window.show(ctx);
+        let result = self.general_setting_window.show(ctx,self.total_ev_handler.wsl_installed);
         if result.0 {
             self.general_setting_window.close();
             if let Some(o) = result.1 {

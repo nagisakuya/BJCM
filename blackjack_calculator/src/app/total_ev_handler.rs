@@ -26,8 +26,9 @@ pub struct TotalEvHandler {
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
     //textures: [Option<TextureHandle>; 2],
-    wsl_installed: bool,
+    pub wsl_installed: bool,
 }
+
 impl Default for TotalEvHandler {
     fn default() -> Self {
         let wsl = {
@@ -62,10 +63,6 @@ impl TotalEvHandler {
         self.optimal_betsize
     }
     pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {
-        /*let image = load_image_from_path(&format!("{}/play.png", IMAGE_FOLDER_PATH)).unwrap();
-        self.textures[0] = Some(cc.egui_ctx.load_texture("play", image));
-        let image = load_image_from_path(&format!("{}/stop.png", IMAGE_FOLDER_PATH)).unwrap();
-        self.textures[1] = Some(cc.egui_ctx.load_texture("stop", image));*/
     }
     pub fn update(&mut self, table: &TableState, ctx: &Context) {
         let deck = &table.deck;
@@ -188,7 +185,7 @@ impl TotalEvHandler {
                         } else {
                             (Instant::now() - s.1).as_secs() / 5 * 5
                         };
-                        format!("{:4>+1.3}%\n({:>2}秒前)", percent, ago)
+                        format!("{:4>+1.3}%\n({:>2}{})", percent, ago, get_text(TextKey::EVShowerSecondAgo))
                     }
                     None => "\n".to_owned(),
                 })

@@ -1,26 +1,25 @@
-use once_cell::sync::Lazy;
 use super::*;
+use once_cell::sync::Lazy;
 
-
-#[derive(Clone,serde::Serialize,serde::Deserialize,PartialEq, Eq)]
-pub struct Keys{
+#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct Keys {
     pub card: [Key; 10],
     pub undo: Key,
     pub next: Key,
     pub reset: Key,
     pub split: Key,
-    pub up:Key,
-    pub down:Key,
-    pub right:Key,
-    pub left:Key,
+    pub up: Key,
+    pub down: Key,
+    pub right: Key,
+    pub left: Key,
     pub step: Key,
     pub remove: Key,
 }
 
-impl Default for Keys{
+impl Default for Keys {
     fn default() -> Self {
         Keys {
-            card:[
+            card: [
                 Key::Num1,
                 Key::Num2,
                 Key::Num3,
@@ -32,162 +31,168 @@ impl Default for Keys{
                 Key::Num9,
                 Key::Num0,
             ],
-            undo:Key::Z,
-            next:Key::Enter,
-            reset:Key::R,
-            split:Key::S,
-            up:Key::ArrowUp,
-            down:Key::ArrowDown,
-            right:Key::ArrowRight,
-            left:Key::ArrowLeft,
-            step:Key::Space,
-            remove:Key::Backspace
+            undo: Key::Z,
+            next: Key::Enter,
+            reset: Key::R,
+            split: Key::S,
+            up: Key::ArrowUp,
+            down: Key::ArrowDown,
+            right: Key::ArrowRight,
+            left: Key::ArrowLeft,
+            step: Key::Space,
+            remove: Key::Backspace,
         }
     }
 }
 
 macro_rules! generate_combobox {
     ($label:expr,$ui:expr,$i:expr) => {{
-        let text = format!("{:?}",$i);
-        let closure = |ui:&mut Ui|{
-            for &item in KEY_LIST.iter(){
-                let text = format!{"{:?}",item};
+        let text = format!("{:?}", $i);
+        let closure = |ui: &mut Ui| {
+            for &item in KEY_LIST.iter() {
+                let text = format! {"{:?}",item};
                 ui.selectable_value(&mut $i, item, text);
-            };
+            }
         };
-        ComboBox::from_label($label).selected_text(text).width(120.0).show_ui($ui, closure);
+        ComboBox::from_label($label)
+            .selected_text(text)
+            .width(120.0)
+            .show_ui($ui, closure);
     }};
 }
 
-pub struct KeySettingWindow{
-    keys:Keys,
-    is_activated:bool,
-    opened:bool,
+pub struct KeySettingWindow {
+    keys: Keys,
+    opened: bool,
 }
-impl KeySettingWindow{
-    pub fn new(keys:&Keys,is_activated:bool) -> Self{
-        Self{
-            keys:keys.clone(),
-            is_activated,
-            opened:false,
+impl KeySettingWindow {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            keys: keys.clone(),
+            opened: false,
         }
     }
-    pub fn switch(&mut self){
-        if self.opened{
+    pub fn switch(&mut self) {
+        if self.opened {
             self.try_close();
-        }else{
+        } else {
             self.opened = true;
         }
     }
-    pub fn try_close(&mut self){
-        if CONFIG.read().kyes == self.keys{
+    pub fn try_close(&mut self) {
+        if CONFIG.read().kyes == self.keys {
             self.close();
         }
     }
-    pub fn close(&mut self){
+    pub fn close(&mut self) {
         self.opened = false;
     }
-    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Keys>){
-        let mut result = (false,None);
-        if !self.opened {return result}
+    pub fn show(&mut self, ctx: &Context, is_activated: bool) -> (bool, Option<Keys>) {
+        let mut result = (false, None);
+        if !self.opened {
+            return result;
+        }
         Window::new(get_text(TextKey::KeySettingWindowName))
-        .auto_sized()
-        .collapsible(false)
-        .show(ctx, |ui|{
-            ScrollArea::vertical().auto_shrink([true,true]).max_height(300.0)
-            .show(ui, |ui|{
-                generate_combobox!("UP",ui,self.keys.up);
-                generate_combobox!("DOWN",ui,self.keys.down);
-                generate_combobox!("RIGHT",ui,self.keys.right);
-                generate_combobox!("LEFT",ui,self.keys.left);
-                generate_combobox!("Split",ui,self.keys.split);
-                generate_combobox!("Step",ui,self.keys.step);
-                generate_combobox!("Next",ui,self.keys.next);
-                generate_combobox!("Remove",ui,self.keys.remove);
-                generate_combobox!("Undo",ui,self.keys.undo);
-                generate_combobox!("Reset",ui,self.keys.reset);
-                generate_combobox!("Ace",ui,self.keys.card[0]);
-                generate_combobox!("2",ui,self.keys.card[1]);
-                generate_combobox!("3",ui,self.keys.card[2]);
-                generate_combobox!("4",ui,self.keys.card[3]);
-                generate_combobox!("5",ui,self.keys.card[4]);
-                generate_combobox!("6",ui,self.keys.card[5]);
-                generate_combobox!("7",ui,self.keys.card[6]);
-                generate_combobox!("8",ui,self.keys.card[7]);
-                generate_combobox!("9",ui,self.keys.card[8]);
-                generate_combobox!("Ten",ui,self.keys.card[9]);
-            });
-            ui.add_space(10.0);
-            if !self.is_activated{
-                ui.label(RichText::new(get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
-            }
-            ui.horizontal(|ui|{
-                if ui.button(get_text(TextKey::Cancel)).clicked(){
-                    result.0 = true;
+            .auto_sized()
+            .collapsible(false)
+            .show(ctx, |ui| {
+                ScrollArea::vertical()
+                    .auto_shrink([true, true])
+                    .max_height(300.0)
+                    .show(ui, |ui| {
+                        generate_combobox!("UP", ui, self.keys.up);
+                        generate_combobox!("DOWN", ui, self.keys.down);
+                        generate_combobox!("RIGHT", ui, self.keys.right);
+                        generate_combobox!("LEFT", ui, self.keys.left);
+                        generate_combobox!("Split", ui, self.keys.split);
+                        generate_combobox!("Step", ui, self.keys.step);
+                        generate_combobox!("Next", ui, self.keys.next);
+                        generate_combobox!("Remove", ui, self.keys.remove);
+                        generate_combobox!("Undo", ui, self.keys.undo);
+                        generate_combobox!("Reset", ui, self.keys.reset);
+                        generate_combobox!("Ace", ui, self.keys.card[0]);
+                        generate_combobox!("2", ui, self.keys.card[1]);
+                        generate_combobox!("3", ui, self.keys.card[2]);
+                        generate_combobox!("4", ui, self.keys.card[3]);
+                        generate_combobox!("5", ui, self.keys.card[4]);
+                        generate_combobox!("6", ui, self.keys.card[5]);
+                        generate_combobox!("7", ui, self.keys.card[6]);
+                        generate_combobox!("8", ui, self.keys.card[7]);
+                        generate_combobox!("9", ui, self.keys.card[8]);
+                        generate_combobox!("Ten", ui, self.keys.card[9]);
+                    });
+                ui.add_space(10.0);
+                if !is_activated {
+                    ui.label(
+                        RichText::new(get_text(TextKey::TrialVersionKeySettingMessage))
+                            .color(Color32::from_rgb(200, 0, 0)),
+                    );
                 }
-                if ui.button(get_text(TextKey::Apply)).clicked(){
-                    result.0 = true;
-                    result.1 = Some(self.keys.clone());
-                }
+                ui.horizontal(|ui| {
+                    if ui.button(get_text(TextKey::Cancel)).clicked() {
+                        result.0 = true;
+                    }
+                    if ui.button(get_text(TextKey::Apply)).clicked() {
+                        result.0 = true;
+                        result.1 = Some(self.keys.clone());
+                    }
+                });
             });
-         });
-         result
+        result
     }
 }
 
-static KEY_LIST:Lazy<Vec<Key>> = Lazy::new(||vec![
-    Key::Num0,
-    Key::Num1,
-    Key::Num2,
-    Key::Num3,
-    Key::Num4,
-    Key::Num5,
-    Key::Num6,
-    Key::Num7,
-    Key::Num8,
-    Key::Num9,
-    
-    Key::A,
-    Key::B,
-    Key::C,
-    Key::D,
-    Key::E,
-    Key::F,
-    Key::G,
-    Key::H,
-    Key::I,
-    Key::J,
-    Key::K,
-    Key::L,
-    Key::M,
-    Key::N,
-    Key::O,
-    Key::P,
-    Key::Q,
-    Key::R,
-    Key::S,
-    Key::T,
-    Key::U,
-    Key::V,
-    Key::W,
-    Key::X,
-    Key::Y,
-    Key::Z,
-    
-    Key::ArrowDown,
-    Key::ArrowLeft,
-    Key::ArrowRight,
-    Key::ArrowUp,
-    
-    Key::Escape,
-    Key::Backspace,
-    Key::Enter,
-    Key::Space,
-    
-    Key::Insert,
-    Key::Delete,
-    Key::Home,
-    Key::End,
-    Key::PageUp,
-    Key::PageDown,
-    ]);
+static KEY_LIST: Lazy<Vec<Key>> = Lazy::new(|| {
+    vec![
+        Key::Num0,
+        Key::Num1,
+        Key::Num2,
+        Key::Num3,
+        Key::Num4,
+        Key::Num5,
+        Key::Num6,
+        Key::Num7,
+        Key::Num8,
+        Key::Num9,
+        Key::A,
+        Key::B,
+        Key::C,
+        Key::D,
+        Key::E,
+        Key::F,
+        Key::G,
+        Key::H,
+        Key::I,
+        Key::J,
+        Key::K,
+        Key::L,
+        Key::M,
+        Key::N,
+        Key::O,
+        Key::P,
+        Key::Q,
+        Key::R,
+        Key::S,
+        Key::T,
+        Key::U,
+        Key::V,
+        Key::W,
+        Key::X,
+        Key::Y,
+        Key::Z,
+        Key::ArrowDown,
+        Key::ArrowLeft,
+        Key::ArrowRight,
+        Key::ArrowUp,
+        Key::Escape,
+        Key::Backspace,
+        Key::Enter,
+        Key::Space,
+        Key::Insert,
+        Key::Delete,
+        Key::Home,
+        Key::End,
+        Key::PageUp,
+        Key::PageDown,
+    ]
+});
