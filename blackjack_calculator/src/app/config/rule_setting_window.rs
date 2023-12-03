@@ -23,15 +23,15 @@ impl RuleSettingWindow{
             opened:false,
         }
     }
-    pub fn switch(&mut self, config: &Config){
+    pub fn switch(&mut self){
         if self.opened{
-            self.try_close(config);
+            self.try_close();
         }else{
             self.opened = true;
         }
     }
-    pub fn try_close(&mut self, config: &Config){
-        if config.rule == self.to_rule(){
+    pub fn try_close(&mut self){
+        if CONFIG.read().rule == self.to_rule(){
             self.close();
         }
     }
@@ -46,10 +46,10 @@ impl RuleSettingWindow{
         rule.BJ_PAYBACK = self.bj_odd - 1.0;
         rule
     }
-    pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Rule>){
+    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Rule>){
         let mut result = (false,None);
         if !self.opened {return result}
-        Window::new(config.get_text(TextKey::RuleSettingWindowName))
+        Window::new(get_text(TextKey::RuleSettingWindowName))
         .auto_sized()
         .collapsible(false)
         .show(ctx, |ui|{
@@ -79,13 +79,13 @@ impl RuleSettingWindow{
             }
             ui.add(Checkbox::new(&mut self.rule.DEALER_PEEKS_TEN, "dealer peeks with Ten"));
             if !self.is_activated{
-                ui.label(RichText::new(config.get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));
+                ui.label(RichText::new(get_text(TextKey::TrialVersionRuleSettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
-                if ui.button(config.get_text(TextKey::Cancel)).clicked(){
+                if ui.button(get_text(TextKey::Cancel)).clicked(){
                     result.0 = true;
                 }
-                if self.is_activated && ui.button(config.get_text(TextKey::Apply)).clicked(){
+                if self.is_activated && ui.button(get_text(TextKey::Apply)).clicked(){
                     result.0 = true;
                     result.1 = Some(self.to_rule());
                 }

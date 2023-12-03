@@ -47,9 +47,9 @@ impl AssetManager {
             Default::default()
         }
     }
-    pub fn show_balance(&mut self, ui: &mut Ui, input_flag: &mut bool,config:&Config){
+    pub fn show_balance(&mut self, ui: &mut Ui, input_flag: &mut bool){
         ui.horizontal(|ui|{
-            ui.label(config.get_text(TextKey::Balance).to_owned() + ":");
+            ui.label(get_text(TextKey::Balance).to_owned() + ":");
             Self::add_numonly_textedit(ui, &mut self.current_asset, input_flag, 100.0);
             let temp = self.current_asset + self.diff_between_current_asset;
             if self.total_asset != temp{
@@ -58,7 +58,7 @@ impl AssetManager {
             }
         });
     }
-    pub fn draw_text(&mut self, ui: &mut Ui, optimal_betsize: Option<f32>,_config:&Config) -> u32 {
+    pub fn draw_text(&mut self, ui: &mut Ui, optimal_betsize: Option<f32>) -> u32 {
         let betsize = if let Some(t) = optimal_betsize {
             self.calc_betsize(t)
         } else {
@@ -89,10 +89,10 @@ impl AssetManager {
 
         bet
     }
-    pub fn show_window(&mut self, ctx: &Context, config: &Config, input_flag: &mut bool) {
+    pub fn show_window(&mut self, ctx: &Context, input_flag: &mut bool) {
         let temp = self.clone();
         let mut close_flag = false;
-        Window::new(config.get_text(TextKey::AssetWindowName))
+        Window::new(get_text(TextKey::AssetWindowName))
             .auto_sized()
             .collapsible(false)
             .open(&mut self.opened)
@@ -101,11 +101,11 @@ impl AssetManager {
                     Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
                 const SPACE: f32 = 5.0;
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowAsset));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowAsset));
                 add_textedit(ui, &mut self.total_asset);
                 ui.add_space(SPACE);
 
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowAssetInCasino));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowAssetInCasino));
                 add_textedit(ui, &mut self.current_asset);
                 ui.add_space(SPACE);
                 self.diff_between_current_asset = self.total_asset - self.current_asset;
@@ -113,23 +113,23 @@ impl AssetManager {
                 let mut add_textedit = |ui: &mut Ui, num| {
                     Self::add_numonly_textedit(ui, num, input_flag, 140.0);
                 };
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowMinBet));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowMinBet));
                 add_textedit(ui, &mut self.min_bet);
                 ui.add_space(SPACE);
 
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowMaxBet));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowMaxBet));
                 add_textedit(ui, &mut self.max_bet);
                 ui.add_space(SPACE);
 
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowBetStep));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowBetStep));
                 add_textedit(ui, &mut self.bet_step);
                 ui.add_space(SPACE);
 
-                ui.label("◇".to_owned() + config.get_text(TextKey::AssetWindowThreshold));
+                ui.label("◇".to_owned() + get_text(TextKey::AssetWindowThreshold));
                 ui.add(Slider::new(&mut self.round_up, 0.05..=1.00).step_by(0.05));
 
                 ui.add_space(10.0);
-                if ui.button(config.get_text(TextKey::Close)).clicked(){
+                if ui.button(get_text(TextKey::Close)).clicked(){
                     close_flag = true;
                 }
             });

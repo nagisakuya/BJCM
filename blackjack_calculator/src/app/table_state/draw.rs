@@ -2,12 +2,13 @@ use super::*;
 use config::*;
 
 impl TableState {
-    pub fn show_deck(&self, ui: &mut Ui, config: &Config) {
+    pub fn show_deck(&self, ui: &mut Ui) {
         let max_rect = ui.max_rect();
         const HEIGHT: f32 = 20.0;
         const MARGIN: f32 = 1.0;
         for i in 0..10 {
-            let original = 4.0 * config.rule.NUMBER_OF_DECK as f32 * if i == 9 { 4.0 } else { 1.0 };
+            let original =
+                4.0 * CONFIG.read().rule.NUMBER_OF_DECK as f32 * if i == 9 { 4.0 } else { 1.0 };
             let width = max_rect.width() * self.deck.get(Card::new(i).unwrap()) as f32 / original;
             let rect = Rect::from_min_size(
                 max_rect.min + Vec2::new(0.0, i as f32 * (HEIGHT + MARGIN)),
@@ -19,7 +20,7 @@ impl TableState {
                 rect.left_bottom(),
                 Align2::LEFT_BOTTOM,
                 format!("{}:{:>2}", Card::new(i).unwrap(), self.deck[i]),
-                FontId::new(HEIGHT-6.0, FontFamily::Name("noto_sans".into()).into()),
+                FontId::new(HEIGHT - 6.0, FontFamily::Name("noto_sans".into())),
                 Color32::from_gray(200),
             );
             ui.painter().add(text_shape);
@@ -27,7 +28,7 @@ impl TableState {
         ui.add_space(10.0 * (HEIGHT + MARGIN));
     }
 
-    pub fn draw_table(&mut self, ui: &mut Ui, config: &Config) {
+    pub fn draw_table(&mut self, ui: &mut Ui) {
         let available_rect = ui.min_rect();
         const TOP_MARGIN: f32 = 20.0;
 
@@ -45,9 +46,11 @@ impl TableState {
                 self.dealer.as_slice(),
                 dealer_root,
                 Vec2::new(25.0, 0.0),
-                highlight,config
+                highlight,
             );
-            if config.rule.INSUALANCE && self.dealer.len() == 1 && self.dealer.get_first().is_ace()
+            if CONFIG.read().rule.INSUALANCE
+                && self.dealer.len() == 1
+                && self.dealer.get_first().is_ace()
             {
                 let insualance = self.deck.insualance_odd() > 0.0;
                 let label = Label::new(&format!(
@@ -76,7 +79,6 @@ impl TableState {
                 discard_root,
                 Vec2::new(0.0, 20.0),
                 highlight,
-                config,
             );
         }
 
@@ -98,7 +100,7 @@ impl TableState {
                     available_rect.bottom() - BOTTOM_MARGIN - Self::CARD_SIZE.y,
                 );
                 let highlight = self.selected.is_player(i);
-                Self::draw_hand(ui, phand.as_slice(), pos, Vec2::new(0.0, -30.0), highlight,config);
+                Self::draw_hand(ui, phand.as_slice(), pos, Vec2::new(0.0, -30.0), highlight);
 
                 let result_area_rect = Rect::from_min_size(
                     pos + vec2(0.0, Self::CARD_SIZE.y + 5.0),
@@ -117,26 +119,24 @@ impl TableState {
                             Vec2::new(25.0, 25.0),
                         );
                         if phand.is_player {
-                            if ui.put(rect, Button::new(&format!("◆"))).clicked() {
+                            if ui.put(rect, Button::new("◆".to_string())).clicked() {
                                 phand.is_player = false;
                                 if !phand.splitted {
                                     self.base_players.get_mut(i).unwrap().is_player = false;
                                 }
                             };
-                        } else {
-                            if ui.put(rect, Button::new(&format!("◇"))).clicked() {
-                                phand.is_player = true;
-                                if !phand.splitted {
-                                    self.base_players.get_mut(i).unwrap().is_player = true;
-                                }
-                                updated = true;
-                            };
-                        }
+                        } else if ui.put(rect, Button::new("◇".to_string())).clicked() {
+                            phand.is_player = true;
+                            if !phand.splitted {
+                                self.base_players.get_mut(i).unwrap().is_player = true;
+                            }
+                            updated = true;
+                        };
                     }
                 };
             }
             if updated {
-                self.update_hand_ev(&config.rule);
+                self.update_hand_ev();
             }
         }
 
@@ -201,7 +201,7 @@ impl TableState {
         }
     }
 
-    fn draw_hand(ui: &mut Ui, cards: &[Card], pos: Pos2, step: Vec2, highlight: bool,config:&Config) {
+    fn draw_hand(ui: &mut Ui, cards: &[Card], pos: Pos2, step: Vec2, highlight: bool) {
         const OUTER_MARGINE: f32 = 5.0;
         let upper_limit = ui.ctx().available_rect().top() + 10.0;
         if highlight {
@@ -214,14 +214,14 @@ impl TableState {
                 pos.y - OUTER_MARGINE,
             );
             if cards.len() >= 2 {
-                if step.x > 0.0{
+                if step.x > 0.0 {
                     upper_right_pos.x += step.x * (cards.len() - 1) as f32;
-                }else{
+                } else {
                     bottom_left_pos.x += step.x * (cards.len() - 1) as f32;
                 }
-                if step.y < 0.0{
+                if step.y < 0.0 {
                     upper_right_pos.y += step.y * (cards.len() - 1) as f32;
-                }else{
+                } else {
                     bottom_left_pos.y += step.y * (cards.len() - 1) as f32;
                 }
             }
@@ -237,11 +237,11 @@ impl TableState {
                 pos_temp.y = upper_limit;
                 size.y -= temp;
             }
-            Self::draw_card(ui, item, pos_temp,config);
+            Self::draw_card(ui, item, pos_temp);
         }
     }
     const CARD_SIZE: Vec2 = vec2(70.0, 100.0);
-    fn draw_card(ui: &mut Ui, card: &Card, pos: Pos2,config:&Config) -> Rect {
+    fn draw_card(ui: &mut Ui, card: &Card, pos: Pos2) -> Rect {
         const MARGIN: Vec2 = Vec2::new(0.0, 0.0);
         const TEXT_SIZE: f32 = 35.0;
         const TEXT_WIDTH: f32 = TEXT_SIZE * 0.8;
@@ -253,7 +253,7 @@ impl TableState {
             Rounding::same(5.0),
             Stroke::new(1.0, Color32::from_rgb(0, 0, 0)),
         );
-        
+
         let galley = ui.painter().layout(
             card.to_string(),
             FontId::new(TEXT_SIZE, FontFamily::Name("times_new_roman".into())),
@@ -268,11 +268,11 @@ impl TableState {
         let upper_text = TextShape::new(rect.min + margin, galley.clone());
         ui.painter().add(upper_text);
 
-        if config.general.rotate_num{
+        if CONFIG.read().general.rotate_num {
             let mut bottom_text = TextShape::new(rect.max - margin, galley);
             bottom_text.angle = std::f32::consts::PI;
             ui.painter().add(bottom_text);
-        }else{
+        } else {
             let bottom_text = TextShape::new(rect.max - margin - galley.rect.size(), galley);
             ui.painter().add(bottom_text);
         }

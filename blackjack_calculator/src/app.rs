@@ -31,8 +31,10 @@ const ACTIVATION_CODE_PATH: &str = "./data/activation_code.txt";
 const SETTING_FILE_PATH: &str = "./data/setting.bin";
 const ASSET_FILE_PATH: &str = "./data/asset.bin";
 
+pub use config::get_text;
+pub use config::CONFIG;
+
 pub struct AppMain {
-    config: Config,
     activator: Activator,
     table_state: TableState,
     table_history: VecDeque<TableState>,
@@ -64,7 +66,6 @@ impl AppMain {
             asset_manager: AssetManager::load(),
             buy_window: BuyWindow::new(),
             activator,
-            config,
         };
 
         _self.total_ev_handler.setup(cc);
@@ -115,39 +116,39 @@ impl eframe::App for AppMain {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if ui
-                        .button(self.config.get_text(TextKey::GeneralSettingButton))
+                        .button(get_text(TextKey::GeneralSettingButton))
                         .clicked()
                     {
-                        self.general_setting_window.switch(&self.config);
+                        self.general_setting_window.switch();
                     }
                     if ui
-                        .button(self.config.get_text(TextKey::RuleSettingWindowButton))
+                        .button(get_text(TextKey::RuleSettingWindowButton))
                         .clicked()
                     {
-                        self.rule_setting_window.switch(&self.config);
+                        self.rule_setting_window.switch();
                     }
                     if ui
-                        .button(self.config.get_text(TextKey::KeySettingWindowButton))
+                        .button(get_text(TextKey::KeySettingWindowButton))
                         .clicked()
                     {
-                        self.key_setting_window.switch(&self.config);
+                        self.key_setting_window.switch();
                     }
                     if ui
-                        .button(self.config.get_text(TextKey::HowToUseButton))
+                        .button(get_text(TextKey::HowToUseButton))
                         .clicked()
                     {
                         Command::new("cmd")
-                            .args(["/c", "start", self.config.get_text(TextKey::HowToUseURL)])
+                            .args(["/c", "start", get_text(TextKey::HowToUseURL)])
                             .status()
                             .unwrap();
                     }
                     if ui
-                        .button(self.config.get_text(TextKey::AssetButton))
+                        .button(get_text(TextKey::AssetButton))
                         .clicked()
                     {
                         self.asset_manager.opened = !self.asset_manager.opened;
                     }
-                    let text = RichText::new(self.config.get_text(TextKey::BuyWindowButton))
+                    let text = RichText::new(get_text(TextKey::BuyWindowButton))
                         .color(Color32::from_gray(20));
                     let temp = Button::new(text).fill(Color32::from_rgb(255, 200, 30));
                     if !self.activator.activated && ui.add(temp).clicked() {
@@ -156,7 +157,7 @@ impl eframe::App for AppMain {
                 })
             });
         self.total_ev_handler
-            .update(&self.config, &self.table_state,ctx);
+            .update(&self.table_state,ctx);
         SidePanel::right("side_panel")
             .resizable(false)
             .max_width(140.0)
@@ -170,66 +171,63 @@ impl eframe::App for AppMain {
                             betsize = self.asset_manager.draw_text(
                                 ui,
                                 self.total_ev_handler.get_optimal_betsize(),
-                                &self.config,
                             );
-                            self.total_ev_handler.draw_controller(ui,&self.config,&self.table_state.deck);
+                            self.total_ev_handler.draw_controller(ui,&self.table_state.deck);
                             self.asset_manager.show_balance(
                                 ui,
                                 &mut disable_key_input_flag,
-                                &self.config,
                             );
                             ui.add_space(10.0);
                         });
                     });
-                self.table_state.show_deck(ui, &self.config);
+                self.table_state.show_deck(ui);
             });
         CentralPanel::default().show(ctx, |ui| {
-            self.table_state.draw_table(ui, &self.config);
+            self.table_state.draw_table(ui);
         });
-        let result = self.rule_setting_window.show(ctx, &self.config);
+        let result = self.rule_setting_window.show(ctx);
         if result.0 {
             self.rule_setting_window.close();
             if self.activator.check_activated() {
                 if let Some(o) = result.1 {
                     rule::override_rule(o.clone());
-                    self.config.rule = o;
-                    self.config.save();
+                    CONFIG.write().rule = o;
+                    CONFIG.read().save();
                     self.total_ev_handler.reset();
-                    //self.table_state.reset(&self.config);
+                    //self.table_state.reset();
                     //self.table_history = Default::default();
                 }
             }
         }
-        let result = self.key_setting_window.show(ctx, &self.config);
+        let result = self.key_setting_window.show(ctx);
         if result.0 {
             self.key_setting_window.close();
             if let Some(o) = result.1 {
-                self.config.kyes = o;
+                CONFIG.write().kyes = o;
                 if self.activator.check_activated() {
-                    self.config.save();
+                    CONFIG.read().save();
                 }
             }
         }
 
-        let result = self.general_setting_window.show(ctx, &self.config);
+        let result = self.general_setting_window.show(ctx);
         if result.0 {
             self.general_setting_window.close();
             if let Some(o) = result.1 {
-                self.config.general = o;
+                CONFIG.write().general = o;
                 if self.activator.check_activated() {
-                    self.config.save();
+                    CONFIG.read().save();
                 }
             }
         }
-        self.buy_window.show(ctx, &self.config, &mut self.activator);
+        self.buy_window.show(ctx,&mut self.activator);
 
         self.asset_manager
-            .show_window(ctx, &self.config, &mut disable_key_input_flag);
+            .show_window(ctx, &mut disable_key_input_flag);
 
         if !disable_key_input_flag {
             self.table_state.update(
                 ctx,
-                &self.config,
                 &mut self.table_history,
                 betsize,
                 &mut self.asset_manager,

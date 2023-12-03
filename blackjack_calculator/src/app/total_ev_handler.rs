@@ -1,7 +1,7 @@
 use super::*;
 use std::io::Read;
 use std::os::windows::process::CommandExt;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver};
 use std::{
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
@@ -21,7 +21,7 @@ pub struct TotalEvHandler {
     calculate: CalcMode,
     total_ev: Option<(f32, Instant, Deck)>,
     optimal_betsize: Option<f32>,
-    total_ev_resiever: Option<Receiver<(f32,f32)>>,
+    total_ev_resiever: Option<Receiver<(f32, f32)>>,
     progless: f32,
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
@@ -56,16 +56,10 @@ impl Default for TotalEvHandler {
 impl TotalEvHandler {
     //unused
     pub fn _get_ev(&self) -> Option<f32> {
-        match &self.total_ev {
-            Some(x) => Some(x.0),
-            None => None,
-        }
+        self.total_ev.as_ref().map(|x| x.0)
     }
     pub fn get_optimal_betsize(&self) -> Option<f32> {
-        match &self.optimal_betsize {
-            Some(x) => Some(x.clone()),
-            None => None,
-        }
+        self.optimal_betsize
     }
     pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {
         /*let image = load_image_from_path(&format!("{}/play.png", IMAGE_FOLDER_PATH)).unwrap();
@@ -73,18 +67,19 @@ impl TotalEvHandler {
         let image = load_image_from_path(&format!("{}/stop.png", IMAGE_FOLDER_PATH)).unwrap();
         self.textures[1] = Some(cc.egui_ctx.load_texture("stop", image));*/
     }
-    pub fn update(&mut self, config: &Config, table: &TableState, ctx: &Context) {
+    pub fn update(&mut self, table: &TableState, ctx: &Context) {
         let deck = &table.deck;
         let dealer = &table.dealer;
-        if self.process.is_none() {
-            if self.calculate == CalcMode::Endless
+
+        let start_condition = {
+            self.calculate == CalcMode::Endless
                 || self.calculate == CalcMode::DealerStands
-                    && (dealer.stand() || ctx.input().key_pressed(config.kyes.next))
-            {
-                if self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck) {
-                    self.spawn(deck, &config);
-                }
-            }
+                    && (dealer.stand() || ctx.input().key_pressed(CONFIG.read().kyes.next))
+        };
+        let not_calculated = self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck);
+        
+        if self.process.is_none() && start_condition && not_calculated {
+            self.spawn(deck);
         }
 
         if let Some(ref x) = self.progless_resiever {
@@ -93,7 +88,7 @@ impl TotalEvHandler {
             }
         }
         if let Some(ref x) = self.total_ev_resiever {
-            if let Ok((ev,betsize)) = x.try_recv() {
+            if let Ok((ev, betsize)) = x.try_recv() {
                 self.total_ev = Some((
                     ev,
                     self.process.as_ref().unwrap().2,
@@ -105,11 +100,13 @@ impl TotalEvHandler {
             }
         }
     }
-    fn spawn(&mut self, deck: &Deck, config: &Config) {
+    fn spawn(&mut self, deck: &Deck) {
         //privateであるRULEやDECKをbinに変換しないといけない時点でセキュリティになってるとは思う
-        let process = if self.wsl_installed && !config.general.disable_wsl {
+        let process = if self.wsl_installed && !CONFIG.read().general.disable_wsl {
             std::process::Command::new("wsl")
-                .arg("RULE=".to_string() + &io_util::bytes_to_string(&config.rule.to_bytes()))
+                .arg(
+                    "RULE=".to_string() + &io_util::bytes_to_string(&CONFIG.read().rule.to_bytes()),
+                )
                 .arg(SUBPROCESS_WSL_PATH)
                 .arg(&io_util::bytes_to_string(&deck.to_bytes()))
                 .stdout(std::process::Stdio::piped())
@@ -119,7 +116,10 @@ impl TotalEvHandler {
         } else {
             std::process::Command::new(SUBPROCESS_PATH)
                 .arg(&io_util::bytes_to_string(&deck.to_bytes()))
-                .env("RULE", &io_util::bytes_to_string(&config.rule.to_bytes()))
+                .env(
+                    "RULE",
+                    &io_util::bytes_to_string(&CONFIG.read().rule.to_bytes()),
+                )
                 .stdout(std::process::Stdio::piped())
                 .creation_flags(CREATE_NO_WINDOW)
                 .spawn()
@@ -128,10 +128,8 @@ impl TotalEvHandler {
         self.process = Some((Arc::new(Mutex::new(process)), deck.clone(), Instant::now()));
         self.stdout_resiever = Some(thread::spawn({
             let process = self.process.as_ref().unwrap().clone();
-            let (total_ev_sender, total_ev_resiever): (Sender<(f32,f32)>, Receiver<(f32,f32)>) =
-                mpsc::channel();
-            let (progless_sender, progless_resiever): (Sender<f32>, Receiver<f32>) =
-                mpsc::channel();
+            let (total_ev_sender, total_ev_resiever) = mpsc::channel::<(f32, f32)>();
+            let (progless_sender, progless_resiever) = mpsc::channel::<f32>();
             self.total_ev_resiever = Some(total_ev_resiever);
             self.progless_resiever = Some(progless_resiever);
             move || {
@@ -139,22 +137,23 @@ impl TotalEvHandler {
                 let process = &mut process.0.lock().unwrap();
                 loop {
                     let mut temp_buf = vec![0; 10000];
-                    if let Ok(readed) = process.stdout.as_mut().unwrap().read(&mut temp_buf) {
-                        for i in 0..readed {
-                            buffer.push(temp_buf[i]);
+                    if process.stdout.as_mut().unwrap().read(&mut temp_buf).is_ok() {
+                        for item in temp_buf {
+                            buffer.push(item);
                         }
                         let string = String::from_utf8(buffer.clone()).unwrap();
-                        let strings: Vec<&str> = string.split("\n").collect();
+                        let strings: Vec<&str> = string.split('\n').collect();
                         if process.try_wait().unwrap().is_some() {
-                            let temp:Vec<_> = strings.last().unwrap().split(',').collect();
-                            let total_ev = (temp.first().unwrap().parse().unwrap(),temp.last().unwrap().parse().unwrap());
+                            let temp: Vec<_> = strings.last().unwrap().split(',').collect();
+                            let total_ev = (
+                                temp.first().unwrap().parse().unwrap(),
+                                temp.last().unwrap().parse().unwrap(),
+                            );
                             total_ev_sender.send(total_ev).unwrap();
                             break;
-                        } else {
-                            if strings.len() >= 2 {
-                                let temp = strings.get(strings.len() - 2).unwrap();
-                                progless_sender.send(temp.parse().unwrap()).unwrap();
-                            }
+                        } else if strings.len() >= 2 {
+                            let temp = strings.get(strings.len() - 2).unwrap();
+                            progless_sender.send(temp.parse().unwrap()).unwrap();
                         }
                     }
                     thread::sleep(Duration::from_millis(40));
@@ -197,7 +196,7 @@ impl TotalEvHandler {
             );
         });
     }
-    pub fn draw_controller(&mut self, ui: &mut Ui, config: &Config, deck: &Deck) {
+    pub fn draw_controller(&mut self, ui: &mut Ui, deck: &Deck) {
         ui.vertical_centered(|ui| {
             ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
             ui.horizontal(|ui| {
@@ -211,7 +210,7 @@ impl TotalEvHandler {
                     match self.calculate {
                         CalcMode::Idle => {
                             self.calculate = CalcMode::DealerStands;
-                            self.spawn(deck, config);
+                            self.spawn(deck);
                         }
                         CalcMode::DealerStands => {
                             self.calculate = CalcMode::Idle;

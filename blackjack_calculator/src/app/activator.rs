@@ -28,7 +28,7 @@ impl Activator {
         self.code = None;
         self.activated = false;
     }
-    pub fn activate(&mut self,code:&String) -> Result<(),String>{
+    pub fn activate(&mut self,code:&str) -> Result<(),String>{
         self.code = Some(match code.parse(){
             Ok(o) => o,
             Err(_) => return Err("Invalid string in the activation code.".to_string()),
@@ -55,6 +55,6 @@ impl Activator {
         };
         let mut string = String::new();
         file.read_to_string(&mut string).unwrap();
-        return Ok(string);
+        Ok(string)
     }
 }

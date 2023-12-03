@@ -40,7 +40,6 @@ impl TableState {
     pub fn update(
         &mut self,
         ctx: &Context,
-        config: &Config,
         history: &mut VecDeque<TableState>,
         betsize: u32,
         asset: &mut AssetManager,
@@ -52,8 +51,8 @@ impl TableState {
         let mut updated = false;
         let mut update_hand_ev = false;
         for i in 0..10 {
-            if ctx.input().key_pressed(config.kyes.card[i]) {
-                if self.betsize == None {
+            if ctx.input().key_pressed(CONFIG.read().kyes.card[i]) {
+                if self.betsize.is_none() {
                     self.betsize = Some(betsize);
                 }
                 if !self.deck.drawable(i) {
@@ -80,10 +79,10 @@ impl TableState {
                         self.deck.draw(i);
                     }
                 }
-                self.step(config);
+                self.step();
             }
         }
-        if ctx.input().key_pressed(config.kyes.remove) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.remove) {
             updated = true;
             update_hand_ev = true;
             match self.selected {
@@ -105,20 +104,20 @@ impl TableState {
                 }
             }
         }
-        if ctx.input().key_pressed(config.kyes.next) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.next) {
             updated = true;
             asset.add_current(self.next());
         }
-        if ctx.input().key_pressed(config.kyes.reset) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.reset) {
             updated = true;
-            asset.add_current(self.reset(&config));
+            asset.add_current(self.reset());
             total_ev_handler.reset();
         }
-        if ctx.input().key_pressed(config.kyes.step) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.step) {
             updated = true;
-            self.step_force(config);
+            self.step_force();
         }
-        if ctx.input().key_pressed(config.kyes.split) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.split) {
             if let Selected::Player(ref mut pos) = self.selected {
                 let hand = self.players.get_mut(*pos).unwrap();
                 if hand.is_twin() {
@@ -130,7 +129,7 @@ impl TableState {
                 }
             }
         };
-        self.update_selected(ctx, config, &mut updated);
+        self.update_selected(ctx, &mut updated);
         if updated {
             history.push_back(previous);
             if history.len() > HISTORY_LIMIT {
@@ -138,18 +137,18 @@ impl TableState {
             }
         }
         if update_hand_ev{
-            self.update_hand_ev(&config.rule);
+            self.update_hand_ev();
         }
-        if ctx.input().key_pressed(config.kyes.undo) {
-            if history.len() > 0 {
+        if ctx.input().key_pressed(CONFIG.read().kyes.undo) {
+            if !history.is_empty() {
                 *self = history.pop_back().unwrap();
             }
-            self.update_hand_ev(&config.rule);
+            self.update_hand_ev();
         }
     }
 
-    pub fn reset(&mut self, config: &Config) -> i32 {
-        self.deck = Deck::new(config.rule.NUMBER_OF_DECK);
+    pub fn reset(&mut self) -> i32 {
+        self.deck = Deck::new(CONFIG.read().rule.NUMBER_OF_DECK);
         self.next()
     }
 
@@ -173,8 +172,8 @@ impl TableState {
         profit
     }
 
-    fn update_selected(&mut self, ctx: &Context, config: &Config, updated: &mut bool) {
-        if ctx.input().key_pressed(config.kyes.right) {
+    fn update_selected(&mut self, ctx: &Context, updated: &mut bool) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.right) {
             match self.selected {
                 Selected::Player(pos) => {
                     if pos == self.players.len() - 1 {
@@ -185,18 +184,18 @@ impl TableState {
                     *updated = true;
                 }
                 Selected::Dealer => {
-                    if config.general.infinite {
+                    if CONFIG.read().general.infinite {
                         self.selected = Selected::Discard
                     }
                 }
                 Selected::Discard => self.selected = Selected::Dealer,
             }
         };
-        if ctx.input().key_pressed(config.kyes.left) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.left) {
             match self.selected {
                 Selected::Player(pos) => {
                     if pos == 0 {
-                        if config.general.infinite {
+                        if CONFIG.read().general.infinite {
                             self.selected = Selected::Discard
                         } else {
                             self.selected = Selected::Player(self.players.len() - 1);
@@ -207,14 +206,14 @@ impl TableState {
                     *updated = true;
                 }
                 Selected::Dealer => {
-                    if config.general.infinite {
+                    if CONFIG.read().general.infinite {
                         self.selected = Selected::Discard
                     }
                 }
                 Selected::Discard => self.selected = Selected::Dealer,
             }
         };
-        if ctx.input().key_pressed(config.kyes.up) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.up) {
             match self.selected {
                 Selected::Player(_) => self.selected = Selected::Dealer,
                 Selected::Dealer => {
@@ -226,7 +225,7 @@ impl TableState {
             }
             *updated = true;
         };
-        if ctx.input().key_pressed(config.kyes.down) {
+        if ctx.input().key_pressed(CONFIG.read().kyes.down) {
             match self.selected {
                 Selected::Player(_) => self.selected = Selected::Dealer,
                 Selected::Dealer | Selected::Discard => {
@@ -237,14 +236,14 @@ impl TableState {
         };
     }
 
-    fn update_hand_ev(&mut self, rule: &Rule) {
+    fn update_hand_ev(&mut self) {
         for phand in self.players.iter_mut() {
             if self.dealer.len() == 1 && phand.len() >= 2 && phand.is_player && phand.actionable() {
                 let phand_str =
                     io_util::bytes_to_string(&bincode::serialize(&phand.get_phand()).unwrap());
                 let dealer = io_util::bytes_to_string(&bincode::serialize(&self.dealer).unwrap());
                 let deck = io_util::bytes_to_string(&bincode::serialize(&self.deck).unwrap());
-                let rule = io_util::bytes_to_string(&bincode::serialize(&rule).unwrap());
+                let rule = io_util::bytes_to_string(&bincode::serialize(&CONFIG.read().rule).unwrap());
                 let closure = move || {
                     let process = std::process::Command::new(SUBPROCESS_PATH)
                         .arg(deck)

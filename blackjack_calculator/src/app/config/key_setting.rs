@@ -72,25 +72,25 @@ impl KeySettingWindow{
             opened:false,
         }
     }
-    pub fn switch(&mut self, config: &Config){
+    pub fn switch(&mut self){
         if self.opened{
-            self.try_close(config);
+            self.try_close();
         }else{
             self.opened = true;
         }
     }
-    pub fn try_close(&mut self, config: &Config){
-        if config.kyes == self.keys{
+    pub fn try_close(&mut self){
+        if CONFIG.read().kyes == self.keys{
             self.close();
         }
     }
     pub fn close(&mut self){
         self.opened = false;
     }
-    pub fn show(&mut self,ctx:&Context,config:&Config) -> (bool,Option<Keys>){
+    pub fn show(&mut self,ctx:&Context) -> (bool,Option<Keys>){
         let mut result = (false,None);
         if !self.opened {return result}
-        Window::new(config.get_text(TextKey::KeySettingWindowName))
+        Window::new(get_text(TextKey::KeySettingWindowName))
         .auto_sized()
         .collapsible(false)
         .show(ctx, |ui|{
@@ -119,13 +119,13 @@ impl KeySettingWindow{
             });
             ui.add_space(10.0);
             if !self.is_activated{
-                ui.label(RichText::new(config.get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
+                ui.label(RichText::new(get_text(TextKey::TrialVersionKeySettingMessage)).color(Color32::from_rgb(200, 0, 0)));
             }
             ui.horizontal(|ui|{
-                if ui.button(config.get_text(TextKey::Cancel)).clicked(){
+                if ui.button(get_text(TextKey::Cancel)).clicked(){
                     result.0 = true;
                 }
-                if ui.button(config.get_text(TextKey::Apply)).clicked(){
+                if ui.button(get_text(TextKey::Apply)).clicked(){
                     result.0 = true;
                     result.1 = Some(self.keys.clone());
                 }

@@ -31,29 +31,29 @@ impl GeneralSettingWindow {
             general: general.clone(),
         }
     }
-    pub fn switch(&mut self, config: &Config){
+    pub fn switch(&mut self){
         if self.opened{
-            self.try_close(config);
+            self.try_close();
         }else{
             self.opened = true;
         }
     }
-    pub fn try_close(&mut self, config: &Config){
-        if config.general == self.general{
+    pub fn try_close(&mut self){
+        if CONFIG.read().general == self.general{
             self.close();
         }
     }
     pub fn close(&mut self){
         self.opened = false;
     }
-    pub fn show(&mut self, ctx: &Context, config: &Config) -> (bool, Option<GeneralSetting>) {
+    pub fn show(&mut self, ctx: &Context) -> (bool, Option<GeneralSetting>) {
         let mut result = (false, None);
         if !self.opened {return result}
-        Window::new(config.get_text(TextKey::GeneralSettingWindowName))
+        Window::new(get_text(TextKey::GeneralSettingWindowName))
             .auto_sized()
             .collapsible(false)
             .show(ctx, |ui| {
-                ui.label("◇".to_owned() + config.get_text(TextKey::GeneralSettingLanguage));
+                ui.label("◇".to_owned() + get_text(TextKey::GeneralSettingLanguage));
                 egui::ComboBox::from_label("")
                     .selected_text(format!("{:?}", self.general.language))
                     .show_ui(ui, |ui| {
@@ -67,9 +67,9 @@ impl GeneralSettingWindow {
                     });
 
                 ui.add_space(10.0);
-                ui.add(Checkbox::new(&mut self.general.infinite, config.get_text(TextKey::GeneralSettingDiscard)));
-                ui.add(Checkbox::new(&mut self.general.rotate_num, config.get_text(TextKey::GeneralSettingRotateNum)));
-                ui.add(Checkbox::new(&mut self.general.disable_wsl, config.get_text(TextKey::GeneralSettingWSL)));
+                ui.add(Checkbox::new(&mut self.general.infinite, get_text(TextKey::GeneralSettingDiscard)));
+                ui.add(Checkbox::new(&mut self.general.rotate_num, get_text(TextKey::GeneralSettingRotateNum)));
+                ui.add(Checkbox::new(&mut self.general.disable_wsl, get_text(TextKey::GeneralSettingWSL)));
                 ui.horizontal(|ui| {
                     if ui.button("cancel").clicked() {
                         result.0 = true;

@@ -15,36 +15,36 @@ impl BuyWindow {
             activation_text: None,
         }
     }
-    pub fn show(&mut self, ctx: &Context, config: &Config, activator: &mut Activator) {
+    pub fn show(&mut self, ctx: &Context, activator: &mut Activator) {
         let mut close_flag = false;
-        Window::new(config.get_text(TextKey::BuyWindowName))
+        Window::new(get_text(TextKey::BuyWindowName))
             .open(&mut self.opened)
             .show(ctx, |ui| {
                 ui.label(
-                    RichText::new(config.get_text(TextKey::BuyWindowH1))
+                    RichText::new(get_text(TextKey::BuyWindowH1))
                         .heading()
                         .color(Color32::from_gray(230)),
                 );
-                ui.label(RichText::new(config.get_text(TextKey::BuyWindowT1)));
+                ui.label(RichText::new(get_text(TextKey::BuyWindowT1)));
                 ui.add_space(20.0);
                 ui.label(
-                    RichText::new(config.get_text(TextKey::BuyWindowH2))
+                    RichText::new(get_text(TextKey::BuyWindowH2))
                         .heading()
                         .color(Color32::from_gray(230)),
                 );
-                ui.label(RichText::new(config.get_text(TextKey::BuyWindowT2)));
-                ui.add(Hyperlink::new(config.get_text(TextKey::PurchaseLink)));
+                ui.label(RichText::new(get_text(TextKey::BuyWindowT2)));
+                ui.add(Hyperlink::new(get_text(TextKey::PurchaseLink)));
                 ui.add_space(20.0);
-                ui.label(config.get_text(TextKey::BuyWindowUserID));
+                ui.label(get_text(TextKey::BuyWindowUserID));
                 ui.add(TextEdit::singleline(&mut self.pcid.clone()));
                 if ui.button("copy").clicked() {
                     ui.output().copied_text = self.pcid.clone();
                 }
                 ui.add_space(20.0);
-                ui.label(config.get_text(TextKey::BuyWindowActivationFormDescription));
+                ui.label(get_text(TextKey::BuyWindowActivationFormDescription));
                 ui.add(TextEdit::singleline(&mut self.activation_code));
                 if ui
-                    .button(config.get_text(TextKey::ActivationButton))
+                    .button(get_text(TextKey::ActivationButton))
                     .clicked()
                 {
                     match activator.activate(&self.activation_code) {

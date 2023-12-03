@@ -76,39 +76,39 @@ impl Stepper {
 }
 
 impl TableState {
-    fn stepper_move(&mut self,config:&Config) {
+    fn stepper_move(&mut self) {
         self.stepper.current += 1;
-        if self.stepper.get().is_some() && *self.stepper.get().unwrap() == DiscardIfExist && !config.general.infinite{
+        if self.stepper.get().is_some() && *self.stepper.get().unwrap() == DiscardIfExist && !CONFIG.read().general.infinite{
             self.stepper.current += 1;
         }
         if let Some(x) = self.stepper.get_entry_current(self.players.len()){
             self.selected = x;
         }
     }
-    pub fn step(&mut self,config:&Config) {
+    pub fn step(&mut self) {
         if let Some(o) = self.stepper.get() {
             match o {
-                DealToDealer | _DealToPlayerFromLeft | DealToPlayerFromRight => self.step_force(config),
+                DealToDealer | _DealToPlayerFromLeft | DealToPlayerFromRight => self.step_force(),
                 _ => {}
             }
         }
     }
-    pub fn step_force(&mut self,config:&Config) {
+    pub fn step_force(&mut self) {
         if let Some(o) = self.stepper.get() {
             match o {
-                DealToDealer | DealerPlays | DiscardIfExist => self.stepper_move(config),
+                DealToDealer | DealerPlays | DiscardIfExist => self.stepper_move(),
                 _DealToPlayerFromLeft | _PlayerPlaysFromLeft => {
                     if let Selected::Player(ref mut i) = self.selected {
                         *i += 1;
                         if *i == self.players.len() {
-                            self.stepper_move(config)
+                            self.stepper_move()
                         }
                     }
                 }
                 DealToPlayerFromRight | PlayerPlaysFromRight => {
                     if let Selected::Player(ref mut i) = self.selected {
                         if *i == 0 {
-                            self.stepper_move(config)
+                            self.stepper_move()
                         } else {
                             *i -= 1;
                         }
