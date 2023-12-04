@@ -62,8 +62,7 @@ impl TotalEvHandler {
     pub fn get_optimal_betsize(&self) -> Option<f32> {
         self.optimal_betsize
     }
-    pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {
-    }
+    pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {}
     pub fn update(&mut self, table: &TableState, ctx: &Context) {
         let deck = &table.deck;
         let dealer = &table.dealer;
@@ -74,7 +73,7 @@ impl TotalEvHandler {
                     && (dealer.stand() || ctx.input().key_pressed(CONFIG.read().kyes.next))
         };
         let not_calculated = self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck);
-        
+
         if self.process.is_none() && start_condition && not_calculated {
             self.spawn(deck);
         }
@@ -133,18 +132,33 @@ impl TotalEvHandler {
                 let mut buffer = Vec::new();
                 let process = &mut process.0.lock().unwrap();
                 loop {
-                    let mut temp_buf = vec![0; 10000];
-                    if process.stdout.as_mut().unwrap().read(&mut temp_buf).is_ok() {
-                        for item in temp_buf {
+                    let mut temp_buf = [0; 1000];
+                    let process_finished = process.try_wait().unwrap().is_some();
+                    let readed = process
+                        .stdout
+                        .as_mut()
+                        .unwrap()
+                        .read(&mut temp_buf)
+                        .unwrap();
+                    for item in temp_buf {
+                        if item != 0 {
                             buffer.push(item);
                         }
+                    }
+                    if !process_finished || readed == 0 {
                         let string = String::from_utf8(buffer.clone()).unwrap();
                         let strings: Vec<&str> = string.split('\n').collect();
-                        if process.try_wait().unwrap().is_some() {
+                        if process_finished {
                             let temp: Vec<_> = strings.last().unwrap().split(',').collect();
                             let total_ev = (
-                                temp.first().unwrap().parse().unwrap(),
-                                temp.last().unwrap().parse().unwrap(),
+                                temp.first()
+                                    .unwrap()
+                                    .parse()
+                                    .expect(&format!("ParseFailed:{}", temp.first().unwrap())),
+                                temp.last()
+                                    .unwrap()
+                                    .parse()
+                                    .expect(&format!("ParseFailed:{}", temp.last().unwrap())),
                             );
                             total_ev_sender.send(total_ev).unwrap();
                             break;
@@ -153,7 +167,7 @@ impl TotalEvHandler {
                             progless_sender.send(temp.parse().unwrap()).unwrap();
                         }
                     }
-                    thread::sleep(Duration::from_millis(40));
+                    thread::sleep(Duration::from_millis(1));
                 }
             }
         }));
@@ -185,7 +199,12 @@ impl TotalEvHandler {
                         } else {
                             (Instant::now() - s.1).as_secs() / 5 * 5
                         };
-                        format!("{:4>+1.3}%\n({:>2}{})", percent, ago, get_text(TextKey::EVShowerSecondAgo))
+                        format!(
+                            "{:4>+1.3}%\n({:>2}{})",
+                            percent,
+                            ago,
+                            get_text(TextKey::EVShowerSecondAgo)
+                        )
                     }
                     None => "\n".to_owned(),
                 })

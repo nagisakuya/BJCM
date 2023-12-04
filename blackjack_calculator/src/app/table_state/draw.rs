@@ -9,7 +9,7 @@ impl TableState {
         for i in 0..10 {
             let original =
                 4.0 * CONFIG.read().rule.NUMBER_OF_DECK as f32 * if i == 9 { 4.0 } else { 1.0 };
-            let width = max_rect.width() * self.deck.get(Card::new(i).unwrap()) as f32 / original;
+            let width = max_rect.width() * self.deck.get(Card::new(i)) as f32 / original;
             let rect = Rect::from_min_size(
                 max_rect.min + Vec2::new(0.0, i as f32 * (HEIGHT + MARGIN)),
                 Vec2::new(width, HEIGHT),
@@ -19,7 +19,7 @@ impl TableState {
                 &ui.fonts(),
                 rect.left_bottom(),
                 Align2::LEFT_BOTTOM,
-                format!("{}:{:>2}", Card::new(i).unwrap(), self.deck[i]),
+                format!("{}:{:>2}", Card::new(i), self.deck[i]),
                 FontId::new(HEIGHT - 6.0, FontFamily::Name("noto_sans".into())),
                 Color32::from_gray(200),
             );

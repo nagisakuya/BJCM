@@ -36,7 +36,7 @@ pub(super) struct PhandWithResult{
 impl Default for PhandWithResult{
     fn default() -> Self {
         PhandWithResult{
-            phand:PhandForPlay::new(),
+            phand:PhandForPlay::default(),
             result:CalculationResult::Result(None),
             is_player:false,
         }
@@ -45,7 +45,7 @@ impl Default for PhandWithResult{
 impl PhandWithResult{
     pub fn new(is_player:bool) -> Self{
         PhandWithResult{
-            phand:PhandForPlay::new(),
+            phand:PhandForPlay::default(),
             result:CalculationResult::Result(None),
             is_player
         }
@@ -54,7 +54,7 @@ impl PhandWithResult{
         &self.phand
     }
     pub fn _clear(&mut self){
-        self.phand = PhandForPlay::new();
+        self.phand = PhandForPlay::default();
     }
     pub fn divide(&mut self) -> Self{
         PhandWithResult{
