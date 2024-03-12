@@ -69,7 +69,7 @@ create_text_and_enum!(TextKey,load_texts,
     (ActivationErrorFailedCreateFile,["Failed to create file.","ファイルの作成に失敗しました"]),
     (ActivationErrorFailedSaveCode,["Failed to save activation code.","アクティベーションコードの保存に失敗しました"]),
     (ActivationErrorInvalidCode,["Invalid activation code.","アクティベーションコードが違います"]),
-    (EVShowerSecondAgo,["Second ago","秒前"]),
+    (EvIndicatorOldResult,["Last result","前回の結果"]),
 );
 
     

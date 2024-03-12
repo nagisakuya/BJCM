@@ -10,19 +10,19 @@ use std::{
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(PartialEq, Eq, Clone)]
-enum CalcMode {
+enum CalcState {
     Idle,
     Endless,
-    DealerStands,
+    Once,
 }
 
 pub struct TotalEvHandler {
-    process: Option<(Arc<Mutex<std::process::Child>>, Deck, Instant)>,
-    calculate: CalcMode,
-    total_ev: Option<(f32, Instant, Deck)>,
+    process: Option<(Arc<Mutex<std::process::Child>>, Deck)>,
+    state: CalcState,
+    calculation_result: Option<(f32, Deck)>,
     optimal_betsize: Option<f32>,
     total_ev_resiever: Option<Receiver<(f32, f32)>>,
-    progless: f32,
+    progress: f32,
     progless_resiever: Option<Receiver<f32>>,
     stdout_resiever: Option<JoinHandle<()>>,
     //textures: [Option<TextureHandle>; 2],
@@ -41,11 +41,11 @@ impl Default for TotalEvHandler {
             output.status.success()
         };
         TotalEvHandler {
-            progless: 0.0,
+            progress: 0.0,
             process: None,
-            total_ev: None,
+            calculation_result: None,
             optimal_betsize: None,
-            calculate: CalcMode::Idle,
+            state: CalcState::Idle,
             stdout_resiever: None,
             progless_resiever: None,
             total_ev_resiever: None,
@@ -57,7 +57,7 @@ impl Default for TotalEvHandler {
 impl TotalEvHandler {
     //unused
     pub fn _get_ev(&self) -> Option<f32> {
-        self.total_ev.as_ref().map(|x| x.0)
+        self.calculation_result.as_ref().map(|x| x.0)
     }
     pub fn get_optimal_betsize(&self) -> Option<f32> {
         self.optimal_betsize
@@ -66,35 +66,47 @@ impl TotalEvHandler {
         let deck = &table.deck;
         let dealer = &table.dealer;
 
-        let start_condition = {
-            let next_key_pressed = ctx.input(|input|input.key_pressed(CONFIG.read().kyes.next));
-            self.calculate == CalcMode::Endless
-                || self.calculate == CalcMode::DealerStands
-                    && (dealer.stand() || next_key_pressed)
+        let start_condition = match self.state {
+            CalcState::Endless => {
+                dealer.stand()
+                    || ctx.input(|input| {
+                        input.key_pressed(CONFIG.read().kyes.next)
+                            || input.key_pressed(CONFIG.read().kyes.reset)
+                    })
+            }
+            _ => false,
         };
-        let not_calculated = self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck);
+        let not_calculated = self.calculation_result.is_none()
+            || !self.calculation_result.as_ref().unwrap().1.eq(deck);
 
-        if self.process.is_none() && start_condition && not_calculated {
-            self.spawn(deck);
+        if start_condition && not_calculated {
+            self.try_spawn(deck);
         }
 
         if let Some(ref x) = self.progless_resiever {
             if let Ok(o) = x.try_recv() {
-                self.progless = o;
+                self.progress = o;
             }
         }
         if let Some(ref x) = self.total_ev_resiever {
             if let Ok((ev, betsize)) = x.try_recv() {
-                self.total_ev = Some((
-                    ev,
-                    self.process.as_ref().unwrap().2,
-                    self.process.as_ref().unwrap().1.clone(),
-                ));
+                let process = self.process.take();
+                self.calculation_result = Some((ev, process.unwrap().1));
                 self.optimal_betsize = Some(betsize);
-                self.process = None;
-                self.progless = 0.0;
+                self.progress = 0.0;
+                self.progless_resiever = None;
+                if self.state == CalcState::Once {
+                    self.state = CalcState::Idle
+                }
             }
         }
+    }
+    fn try_spawn(&mut self, deck: &Deck) -> Option<()> {
+        if self.process.is_some() {
+            return None;
+        }
+        self.spawn(deck);
+        Some(())
     }
     fn spawn(&mut self, deck: &Deck) {
         //privateであるRULEやDECKをbinに変換しないといけない時点でセキュリティになってるとは思う
@@ -121,7 +133,7 @@ impl TotalEvHandler {
                 .spawn()
                 .unwrap()
         };
-        self.process = Some((Arc::new(Mutex::new(process)), deck.clone(), Instant::now()));
+        self.process = Some((Arc::new(Mutex::new(process)), deck.clone()));
         self.stdout_resiever = Some(thread::spawn({
             let process = self.process.as_ref().unwrap().clone();
             let (total_ev_sender, total_ev_resiever) = mpsc::channel::<(f32, f32)>();
@@ -151,23 +163,21 @@ impl TotalEvHandler {
                         if process_finished {
                             let temp: Vec<_> = strings.last().unwrap().split(',').collect();
                             let total_ev = (
-                                temp.first()
-                                    .unwrap()
-                                    .parse()
-                                    .unwrap_or_else(|_| panic!("ParseFailed:{}", temp.first().unwrap())),
-                                temp.last()
-                                    .unwrap()
-                                    .parse()
-                                    .unwrap_or_else(|_| panic!("ParseFailed:{}", temp.first().unwrap())),
+                                temp.first().unwrap().parse().unwrap_or_else(|_| {
+                                    panic!("ParseFailed:{}", temp.first().unwrap())
+                                }),
+                                temp.last().unwrap().parse().unwrap_or_else(|_| {
+                                    panic!("ParseFailed:{}", temp.last().unwrap())
+                                }),
                             );
-                            total_ev_sender.send(total_ev).unwrap();
+                            let _ = total_ev_sender.send(total_ev);
                             break;
                         } else if strings.len() >= 2 {
                             let temp = strings.get(strings.len() - 2).unwrap();
-                            progless_sender.send(temp.parse().unwrap()).unwrap();
+                            let _ = progless_sender.send(temp.parse().unwrap());
                         }
                     }
-                    thread::sleep(Duration::from_millis(1));
+                    thread::sleep(Duration::from_millis(10));
                 }
             }
         }));
@@ -183,70 +193,74 @@ impl TotalEvHandler {
         self.stop();
         *self = TotalEvHandler {
             //textures: self.textures.clone(),
-            calculate: self.calculate.clone(),
+            state: self.state.clone(),
             ..Default::default()
         };
     }
     pub fn draw_text(&mut self, ui: &mut Ui, table_state: &TableState) {
         ui.vertical_centered(|ui| {
-            ui.label(
-                RichText::new(match self.total_ev {
-                    Some(ref mut s) => {
-                        let percent = s.0 * 100.0;
-                        let ago = if table_state.deck.eq(&s.2) {
-                            s.1 = Instant::now();
-                            0
-                        } else {
-                            (Instant::now() - s.1).as_secs() / 5 * 5
-                        };
-                        format!(
-                            "{:4>+1.3}%\n({:>2}{})",
-                            percent,
-                            ago,
-                            get_text(TextKey::EVShowerSecondAgo)
-                        )
+            if let Some((ev, ref deck)) = self.calculation_result {
+                let percent = ev * 100.0;
+                let mut text = format!("{:4>+1.3}%", percent);
+
+                let is_latest = table_state.deck.eq(deck);
+                let color = if is_latest {
+                    if ev > 0.0 {
+                        Color32::LIGHT_GREEN
+                    }else {
+                        Color32::LIGHT_RED
                     }
-                    None => "\n".to_owned(),
-                })
-                .size(20.0),
-            );
+                } else {
+                    text = format!("({})", text);
+                    if ev > 0.0 {
+                        Color32::DARK_GREEN
+                    }else {
+                        Color32::DARK_RED
+                    }
+                };
+                ui.label(RichText::new(text).size(20.0).color(color));
+            } else {
+                //print dummy
+                let rich_text = RichText::new("").size(20.0);
+                ui.label(rich_text);
+            }
         });
     }
     pub fn draw_controller(&mut self, ui: &mut Ui, deck: &Deck) {
         ui.vertical_centered(|ui| {
-            ui.add(ProgressBar::new(self.progless).animate(self.process.is_some()));
+            ui.add(ProgressBar::new(self.progress).animate(self.process.is_some()));
             ui.horizontal(|ui| {
-                let color = if self.calculate == CalcMode::DealerStands {
+                if ui
+                    .add_enabled(
+                        self.process.is_none(),
+                        Button::new("     ▶     ").fill(Color32::DARK_GRAY),
+                    )
+                    .clicked()
+                {
+                    self.state = CalcState::Once;
+                    self.try_spawn(deck);
+                }
+
+                let color = if self.state == CalcState::Endless {
                     Color32::GOLD
                 } else {
                     Color32::DARK_GRAY
                 };
                 ui.add_space(3.0);
-                if ui.add(Button::new("     ▶     ").fill(color)).clicked() {
-                    match self.calculate {
-                        CalcMode::Idle => {
-                            self.calculate = CalcMode::DealerStands;
-                            self.spawn(deck);
-                        }
-                        CalcMode::DealerStands => {
-                            self.calculate = CalcMode::Idle;
-                            self.stop();
-                        }
-                        CalcMode::Endless => self.calculate = CalcMode::DealerStands,
-                    }
-                }
-                let color = if self.calculate == CalcMode::Endless {
-                    Color32::GOLD
-                } else {
-                    Color32::DARK_GRAY
-                };
                 if ui.add(Button::new("     ∞     ").fill(color)).clicked() {
-                    match self.calculate {
-                        CalcMode::Idle => self.calculate = CalcMode::Endless,
-                        CalcMode::DealerStands => self.calculate = CalcMode::Endless,
-                        CalcMode::Endless => {
-                            self.calculate = CalcMode::Idle;
+                    match self.state {
+                        CalcState::Idle => {
+                            self.state = CalcState::Endless;
+                            if self.calculation_result.is_none() {
+                                self.try_spawn(deck);
+                            }
+                        }
+                        CalcState::Endless => {
+                            self.state = CalcState::Idle;
                             self.stop();
+                        }
+                        CalcState::Once => {
+                            self.state = CalcState::Endless;
                         }
                     }
                 }

@@ -3,7 +3,7 @@ pub use eframe::egui::*;
 
 use std::collections::{BTreeMap, VecDeque};
 use std::process::Command;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 mod table_state;
 use table_state::*;
