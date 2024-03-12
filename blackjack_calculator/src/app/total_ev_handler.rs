@@ -98,6 +98,7 @@ impl TotalEvHandler {
                 if self.state == CalcState::Once {
                     self.state = CalcState::Idle
                 }
+                ctx.request_repaint_after(Duration::ZERO);
             }
         }
     }
