@@ -20,7 +20,7 @@ impl TableState {
                     fonts,
                     rect.left_bottom(),
                     Align2::LEFT_BOTTOM,
-                    format!("{}:{:>2}", Card::new(i), self.deck[i]),
+                    format!("{}:{:>2}", Card::new(i), self.deck[i as usize]),
                     FontId::new(HEIGHT - 6.0, FontFamily::Name("noto_sans".into())),
                     Color32::from_gray(200),
                 )

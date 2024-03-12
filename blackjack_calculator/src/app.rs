@@ -183,10 +183,9 @@ impl eframe::App for AppMain {
         CentralPanel::default().show(ctx, |ui| {
             self.table_state.draw_table(ui);
         });
-        let result = self.rule_setting_window.show(ctx,self.activator.activated);
+        let result = self.rule_setting_window.show(ctx,true);
         if result.0 {
             self.rule_setting_window.close();
-            if self.activator.check_activated() {
                 if let Some(rule) = result.1 {
                     let reset_flag = rule::rule().NUMBER_OF_DECK != rule.NUMBER_OF_DECK;
                     rule::override_rule(rule.clone());
@@ -198,7 +197,6 @@ impl eframe::App for AppMain {
                         self.table_history = Default::default();
                     }
                 }
-            }
         }
         let result = self.key_setting_window.show(ctx,self.activator.activated);
         if result.0 {

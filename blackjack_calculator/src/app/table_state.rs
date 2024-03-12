@@ -67,16 +67,16 @@ impl TableState {
                         if let CalculationResult::Result(Some(Action::Double)) = player.result {
                             player.doubled = true;
                         }
-                        player.push(Card::new(i));
+                        player.push(Card::new(i as u32));
 
                         self.deck.draw(i);
                     }
                     Selected::Dealer => {
-                        self.dealer.push(Card::new(i));
+                        self.dealer.push(Card::new(i as u32));
                         self.deck.draw(i);
                     }
                     Selected::Discard => {
-                        self.discard.push(Card::new(i));
+                        self.discard.push(Card::new(i as u32));
                         self.deck.draw(i);
                     }
                 }
