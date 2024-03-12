@@ -54,7 +54,7 @@ impl GeneralSettingWindow {
             .collapsible(false)
             .show(ctx, |ui| {
                 ui.label("◇".to_owned() + get_text(TextKey::GeneralSettingLanguage));
-                egui::ComboBox::from_label("")
+                ComboBox::from_label("")
                     .selected_text(format!("{:?}", self.general.language))
                     .show_ui(ui, |ui| {
                         for item in Language::iter() {

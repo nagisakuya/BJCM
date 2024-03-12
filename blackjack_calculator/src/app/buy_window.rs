@@ -38,7 +38,7 @@ impl BuyWindow {
                 ui.label(get_text(TextKey::BuyWindowUserID));
                 ui.add(TextEdit::singleline(&mut self.pcid.clone()));
                 if ui.button("copy").clicked() {
-                    ui.output().copied_text = self.pcid.clone();
+                    ui.output_mut(|o| o.copied_text = self.pcid.clone());
                 }
                 ui.add_space(20.0);
                 ui.label(get_text(TextKey::BuyWindowActivationFormDescription));

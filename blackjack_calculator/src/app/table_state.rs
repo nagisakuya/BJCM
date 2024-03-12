@@ -50,8 +50,9 @@ impl TableState {
         let previous = self.clone();
         let mut updated = false;
         let mut update_hand_ev = false;
+        ctx.input(|input|{
         for i in 0..10 {
-            if ctx.input().key_pressed(CONFIG.read().kyes.card[i]) {
+            if input.key_pressed(CONFIG.read().kyes.card[i]) {
                 if self.betsize.is_none() {
                     self.betsize = Some(betsize);
                 }
@@ -82,7 +83,7 @@ impl TableState {
                 self.step();
             }
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.remove) {
+        if input.key_pressed(CONFIG.read().kyes.remove) {
             updated = true;
             update_hand_ev = true;
             match self.selected {
@@ -104,20 +105,20 @@ impl TableState {
                 }
             }
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.next) {
+        if input.key_pressed(CONFIG.read().kyes.next) {
             updated = true;
             asset.add_current(self.next());
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.reset) {
+        if input.key_pressed(CONFIG.read().kyes.reset) {
             updated = true;
             asset.add_current(self.reset());
             total_ev_handler.reset();
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.step) {
+        if input.key_pressed(CONFIG.read().kyes.step) {
             updated = true;
             self.step_force();
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.split) {
+        if input.key_pressed(CONFIG.read().kyes.split) {
             if let Selected::Player(ref mut pos) = self.selected {
                 let hand = self.players.get_mut(*pos).unwrap();
                 if hand.is_twin() {
@@ -129,6 +130,7 @@ impl TableState {
                 }
             }
         };
+    });
         self.update_selected(ctx, &mut updated);
         if updated {
             history.push_back(previous);
@@ -139,12 +141,14 @@ impl TableState {
         if update_hand_ev{
             self.update_hand_ev();
         }
-        if ctx.input().key_pressed(CONFIG.read().kyes.undo) {
-            if !history.is_empty() {
-                *self = history.pop_back().unwrap();
+        ctx.input(|input|{
+            if input.key_pressed(CONFIG.read().kyes.undo) {
+                if !history.is_empty() {
+                    *self = history.pop_back().unwrap();
+                }
+                self.update_hand_ev();
             }
-            self.update_hand_ev();
-        }
+        });
     }
 
     pub fn reset(&mut self) -> i32 {
@@ -173,7 +177,8 @@ impl TableState {
     }
 
     fn update_selected(&mut self, ctx: &Context, updated: &mut bool) {
-        if ctx.input().key_pressed(CONFIG.read().kyes.right) {
+        ctx.input(|input|{
+        if input.key_pressed(CONFIG.read().kyes.right) {
             match self.selected {
                 Selected::Player(pos) => {
                     if pos == self.players.len() - 1 {
@@ -191,7 +196,7 @@ impl TableState {
                 Selected::Discard => self.selected = Selected::Dealer,
             }
         };
-        if ctx.input().key_pressed(CONFIG.read().kyes.left) {
+        if input.key_pressed(CONFIG.read().kyes.left) {
             match self.selected {
                 Selected::Player(pos) => {
                     if pos == 0 {
@@ -213,7 +218,7 @@ impl TableState {
                 Selected::Discard => self.selected = Selected::Dealer,
             }
         };
-        if ctx.input().key_pressed(CONFIG.read().kyes.up) {
+        if input.key_pressed(CONFIG.read().kyes.up) {
             match self.selected {
                 Selected::Player(_) => self.selected = Selected::Dealer,
                 Selected::Dealer => {
@@ -225,7 +230,7 @@ impl TableState {
             }
             *updated = true;
         };
-        if ctx.input().key_pressed(CONFIG.read().kyes.down) {
+        if input.key_pressed(CONFIG.read().kyes.down) {
             match self.selected {
                 Selected::Player(_) => self.selected = Selected::Dealer,
                 Selected::Dealer | Selected::Discard => {
@@ -234,6 +239,7 @@ impl TableState {
             }
             *updated = true;
         };
+    });
     }
 
     fn update_hand_ev(&mut self) {

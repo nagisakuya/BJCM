@@ -15,14 +15,16 @@ impl TableState {
                 Vec2::new(width, HEIGHT),
             );
             ui.painter().rect_filled(rect, 0.0, Color32::from_gray(100));
-            let text_shape = Shape::text(
-                &ui.fonts(),
-                rect.left_bottom(),
-                Align2::LEFT_BOTTOM,
-                format!("{}:{:>2}", Card::new(i), self.deck[i]),
-                FontId::new(HEIGHT - 6.0, FontFamily::Name("noto_sans".into())),
-                Color32::from_gray(200),
-            );
+            let text_shape = ui.fonts(|fonts|{
+                Shape::text(
+                    fonts,
+                    rect.left_bottom(),
+                    Align2::LEFT_BOTTOM,
+                    format!("{}:{:>2}", Card::new(i), self.deck[i]),
+                    FontId::new(HEIGHT - 6.0, FontFamily::Name("noto_sans".into())),
+                    Color32::from_gray(200),
+                )
+            });
             ui.painter().add(text_shape);
         }
         ui.add_space(10.0 * (HEIGHT + MARGIN));
@@ -53,7 +55,7 @@ impl TableState {
                 && self.dealer.get_first().is_ace()
             {
                 let insualance = self.deck.insualance_odd() > 0.0;
-                let label = Label::new(&format!(
+                let label = Label::new(format!(
                     "Insualance={}",
                     if insualance { "YES" } else { "NO" }
                 ))
@@ -265,22 +267,22 @@ impl TableState {
         //const underline_weight:f32 = 2.0;
         let margin = Vec2::new((TEXT_WIDTH - galley.size().x) / 2.0, 0.0) + MARGIN;
 
-        let upper_text = TextShape::new(rect.min + margin, galley.clone());
+        let upper_text = TextShape::new(rect.min + margin, galley.clone(), Color32::BLACK);
         ui.painter().add(upper_text);
 
         if CONFIG.read().general.rotate_num {
-            let mut bottom_text = TextShape::new(rect.max - margin, galley);
+            let mut bottom_text = TextShape::new(rect.max - margin, galley, Color32::BLACK);
             bottom_text.angle = std::f32::consts::PI;
             ui.painter().add(bottom_text);
         } else {
-            let bottom_text = TextShape::new(rect.max - margin - galley.rect.size(), galley);
+            let bottom_text = TextShape::new(rect.max - margin - galley.rect.size(), galley, Color32::BLACK);
             ui.painter().add(bottom_text);
         }
 
         //center rect
         ui.painter().rect_filled(
             Rect::from_center_size(rect.center(), Vec2::new(20.0, 20.0)),
-            Rounding::none(),
+            Rounding::ZERO,
             Color32::from_rgb(200, 200, 200),
         );
 

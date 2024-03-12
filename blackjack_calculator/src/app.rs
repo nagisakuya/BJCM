@@ -68,15 +68,13 @@ impl AppMain {
             activator,
         };
 
-        _self.total_ev_handler.setup(cc);
-
-        cc.egui_ctx.set_visuals(egui::Visuals::dark());
+        cc.egui_ctx.set_visuals(Visuals::dark());
 
         //font
         {
             let mut fonts = FontDefinitions::default();
             let mut sans = FontData::from_static(include_bytes!("../fonts/NotoSansJP-Regular.otf"));
-            sans.tweak.scale = 1.5;
+            sans.tweak.scale = 1.2;
             fonts.font_data.insert("noto_sans".to_string(), sans);
 
             let times = FontData::from_static(include_bytes!("../fonts/times new roman.ttf"));
@@ -108,7 +106,7 @@ impl AppMain {
     }
 }
 impl eframe::App for AppMain {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         let mut disable_key_input_flag = false;
         let mut betsize = 0;
         TopBottomPanel::top("menu")
@@ -189,13 +187,16 @@ impl eframe::App for AppMain {
         if result.0 {
             self.rule_setting_window.close();
             if self.activator.check_activated() {
-                if let Some(o) = result.1 {
-                    rule::override_rule(o.clone());
-                    CONFIG.write().rule = o;
+                if let Some(rule) = result.1 {
+                    let reset_flag = rule::rule().NUMBER_OF_DECK != rule.NUMBER_OF_DECK;
+                    rule::override_rule(rule.clone());
+                    CONFIG.write().rule = rule;
                     CONFIG.read().save();
                     self.total_ev_handler.reset();
-                    //self.table_state.reset();
-                    //self.table_history = Default::default();
+                    if reset_flag{
+                        self.table_state.reset();
+                        self.table_history = Default::default();
+                    }
                 }
             }
         }

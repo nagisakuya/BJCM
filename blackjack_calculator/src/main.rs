@@ -9,12 +9,15 @@ fn main() {
     // Log to stdout (if you run with `RUST_LOG=debug`).
 
     let native_options = eframe::NativeOptions {
-        min_window_size: Some(egui::emath::Vec2 { x: 500.0, y: 400.0 }),
+        viewport: egui::ViewportBuilder::default()
+            .with_min_inner_size([500.0, 400.0])
+            .with_icon(eframe::icon_data::from_png_bytes(&include_bytes!("../icon.png")[..])
+            .unwrap()),
         ..Default::default()
     };
     eframe::run_native(
-        &("Blackjack Counting Master ".to_owned() + VERSION),
+        &("Blackjack Solver ".to_owned() + VERSION),
         native_options,
         Box::new(|cc| Box::new(blackjack_calculator::AppMain::new(cc))),
-    );
+    ).unwrap();
 }

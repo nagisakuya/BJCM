@@ -62,15 +62,15 @@ impl TotalEvHandler {
     pub fn get_optimal_betsize(&self) -> Option<f32> {
         self.optimal_betsize
     }
-    pub fn setup(&mut self, _cc: &eframe::CreationContext<'_>) {}
     pub fn update(&mut self, table: &TableState, ctx: &Context) {
         let deck = &table.deck;
         let dealer = &table.dealer;
 
         let start_condition = {
+            let next_key_pressed = ctx.input(|input|input.key_pressed(CONFIG.read().kyes.next));
             self.calculate == CalcMode::Endless
                 || self.calculate == CalcMode::DealerStands
-                    && (dealer.stand() || ctx.input().key_pressed(CONFIG.read().kyes.next))
+                    && (dealer.stand() || next_key_pressed)
         };
         let not_calculated = self.total_ev.is_none() || !self.total_ev.as_ref().unwrap().2.eq(deck);
 
@@ -154,11 +154,11 @@ impl TotalEvHandler {
                                 temp.first()
                                     .unwrap()
                                     .parse()
-                                    .expect(&format!("ParseFailed:{}", temp.first().unwrap())),
+                                    .unwrap_or_else(|_| panic!("ParseFailed:{}", temp.first().unwrap())),
                                 temp.last()
                                     .unwrap()
                                     .parse()
-                                    .expect(&format!("ParseFailed:{}", temp.last().unwrap())),
+                                    .unwrap_or_else(|_| panic!("ParseFailed:{}", temp.first().unwrap())),
                             );
                             total_ev_sender.send(total_ev).unwrap();
                             break;

@@ -2,3 +2,4 @@
 members = [
     "blackjack_calculator",
 ]
+resolver = "2"
