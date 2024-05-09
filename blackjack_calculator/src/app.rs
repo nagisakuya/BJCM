@@ -183,7 +183,7 @@ impl eframe::App for AppMain {
         CentralPanel::default().show(ctx, |ui| {
             self.table_state.draw_table(ui);
         });
-        let result = self.rule_setting_window.show(ctx,true);
+        let result = self.rule_setting_window.show(ctx,self.activator.activated);
         if result.0 {
             self.rule_setting_window.close();
                 if let Some(rule) = result.1 {
